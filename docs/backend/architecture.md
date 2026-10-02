@@ -10,6 +10,12 @@ Backend использует .NET 10 (`net10.0`). Общее решение:
 | Gateway    | `src/Gateway/VectraPKM.Gateway` | YARP reverse proxy и общий Swagger UI      |
 | Identity   | `src/Services/Identity`         | Каркас сервиса пользователей и авторизации |
 
+## Общие технические библиотеки
+
+`src/Shared/VectraPKM.Logging` содержит подключение Serilog для хостов Gateway
+и Identity.Api. Библиотека не содержит бизнес-логики и не используется в Domain
+или Application. Подробнее: [логирование](logging.md).
+
 ## Взаимодействие сервисов
 
 ```text

@@ -1,32 +1,50 @@
 using Microsoft.OpenApi;
+using Serilog;
+using VectraPKM.Logging;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = LoggingExtensions.CreateBootstrapLogger("Identity");
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+try
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "VectraPKM Identity API",
-        Version = "v1"
-    });
-});
+    var builder = WebApplication.CreateBuilder(args);
+    builder.AddVectraLogging("Identity");
 
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger(options =>
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
     {
-        options.PreSerializeFilters.Add((document, request) =>
+        options.SwaggerDoc("v1", new OpenApiInfo
         {
-            var prefix = request.Headers["X-Forwarded-Prefix"].ToString();
-            document.Servers = [new OpenApiServer
-            {
-                Url = string.IsNullOrEmpty(prefix) ? "/" : prefix
-            }];
+            Title = "VectraPKM Identity API",
+            Version = "v1"
         });
     });
-}
 
-app.Run();
+    var app = builder.Build();
+    app.UseSerilogRequestLogging();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger(options =>
+        {
+            options.PreSerializeFilters.Add((document, request) =>
+            {
+                var prefix = request.Headers["X-Forwarded-Prefix"].ToString();
+                document.Servers = [new OpenApiServer
+                {
+                    Url = string.IsNullOrEmpty(prefix) ? "/" : prefix
+                }];
+            });
+        });
+    }
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Identity terminated unexpectedly");
+    Environment.ExitCode = 1;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}

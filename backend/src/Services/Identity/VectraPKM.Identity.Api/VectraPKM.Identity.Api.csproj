@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\VectraPKM.Logging\VectraPKM.Logging.csproj" />
     <ProjectReference Include="..\VectraPKM.Identity.Application\VectraPKM.Identity.Application.csproj" />
     <ProjectReference Include="..\VectraPKM.Identity.Infrastructure\VectraPKM.Identity.Infrastructure.csproj" />
   </ItemGroup>
