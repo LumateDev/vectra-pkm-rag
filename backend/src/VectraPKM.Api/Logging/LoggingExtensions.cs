@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Builder;
 using Serilog;
 
-namespace VectraPKM.Logging;
+namespace VectraPKM.Api.Logging;
 
 public static class LoggingExtensions
 {
-    public static ILogger CreateBootstrapLogger(string serviceName)
+    public static Serilog.ILogger CreateBootstrapLogger(string serviceName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
 

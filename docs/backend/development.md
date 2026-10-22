@@ -1,45 +1,38 @@
 # Разработка backend
 
-## Сборка и запуск
-
-Из корня VectraPKM перейди в backend:
+Требуется стабильный .NET 10 SDK. Из корня репозитория:
 
 ```powershell
 cd backend
 dotnet build VectraPKM.slnx
+dotnet run --project src/VectraPKM.Api --launch-profile http
 ```
 
-В двух терминалах из `backend`:
+В Visual Studio запускай только `VectraPKM.Api`.
 
-```powershell
-dotnet run --project src/Services/Identity/VectraPKM.Identity.Api --launch-profile http
-```
-
-```powershell
-dotnet run --project src/Gateway/VectraPKM.Gateway --launch-profile http
-```
-
-В Visual Studio можно выбрать профиль одновременного запуска `Run all`, если
-он настроен. Файл `VectraPKM.slnLaunch.user` содержит локальную настройку IDE.
-
-| Приложение | HTTP                    | HTTPS в профиле https    |
-| ---------- | ----------------------- | ------------------------ |
-| Gateway    | `http://localhost:5000` | `https://localhost:7000` |
-| Identity   | `http://localhost:5001` | `https://localhost:7001` |
-
-Профиль `https` также включает HTTP на указанном в таблице порту.
-HTTP и HTTPS должны слушать разные порты. Для HTTPS нужен доверенный сертификат
-разработки (`dotnet dev-certs https --trust`).
-
+- HTTP: http://localhost:5000
+- HTTPS в профиле https: https://localhost:7000 (HTTP 5000 тоже включён).
 - Swagger UI: http://localhost:5000/swagger
-- Документ через Gateway: http://localhost:5000/api/identity/swagger/v1/swagger.json
-- Документ напрямую: http://localhost:5001/swagger/v1/swagger.json
+- OpenAPI: http://localhost:5000/swagger/v1/swagger.json
+
+Swagger включён только в Development. Контроллеров пока нет: список операций
+пустой. Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
+База данных и ключ JWT для запуска сейчас не требуются.
 
 ## Конфигурация
 
-- `Properties/launchSettings.json` каждого приложения задаёт локальные профили,
-  порты и окружение. При запуске опубликованного DLL он не применяется.
-- `appsettings.json` содержит настройки приложения.
-- `appsettings.Development.json` содержит переопределения для разработки.
-- Секция `Serilog` управляет логированием: JSON в консоли по умолчанию,
-  читаемый текст в Development. Подробнее: [логирование](logging.md).
+Конфигурация находится в хосте `src/VectraPKM.Api`. Все три файла хранятся в Git:
+
+- `appsettings.json` — общие настройки логирования и AllowedHosts.
+- `appsettings.Development.json` — переопределение формата логов для разработки.
+- `appsettings.Production.json` — пока пустой файл для будущих production-настроек.
+
+.NET загружает общий файл и файл текущего окружения; окруженческие значения
+переопределяют общие. Production не загружает Development.
+Example-файлов и User Secrets нет. Development исключён из публикации.
+
+`Properties/launchSettings.json` задаёт локальные профили и окружение Development.
+Release/Debug — конфигурация сборки, она не выбирает окружение приложения.
+
+Identity очищен до пустых проектов. Авторизации, работы с БД, миграций
+и проверок регистрации/входа сейчас нет. Подробнее: [Identity](modules/identity.md).
