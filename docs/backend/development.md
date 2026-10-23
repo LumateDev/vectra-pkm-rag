@@ -34,4 +34,58 @@ Example-файлов и User Secrets нет. Development исключён из �
 `Properties/launchSettings.json` задаёт локальные профили и окружение Development.
 Release/Debug — конфигурация сборки, она не выбирает окружение приложения.
 
+### Подготовка инструментов
+
+Установить EF CLI и добавить пакет инструментов в запускаемый проект:
+
+```powershell
+dotnet tool install --global dotnet-ef --version 10.0.13
+dotnet add src/VectraPKM.Api package Microsoft.EntityFrameworkCore.Design --version 10.0.13
+```
+
+Если `dotnet-ef` уже установлен, вместо установки обнови его:
+
+```powershell
+dotnet tool update --global dotnet-ef --version 10.0.13
+```
+
+### Создание миграции
+
+Создать начальную миграцию:
+
+```powershell
+dotnet ef migrations add InitialAuth `
+  --project src/Modules/Auth/VectraPKM.Auth.Infrastructure `
+  --startup-project src/VectraPKM.Api `
+  --context AuthDbContext `
+  --output-dir Persistence/Migrations `
+  -- --environment Development
+```
+
+Команда создаёт файлы миграции и снимок модели в Infrastructure, но не изменяет БД.
+Для следующих изменений используй эту же команду с новым описательным именем
+вместо `InitialAuth`. Уже созданную начальную миграцию повторно создавать не нужно.
+
+### Применение миграций
+
+Применить все ещё не применённые миграции к базе из строки подключения:
+
+```powershell
+dotnet ef database update `
+  --project src/Modules/Auth/VectraPKM.Auth.Infrastructure `
+  --startup-project src/VectraPKM.Api `
+  --context AuthDbContext `
+  -- --environment Development
+```
+
+### Просмотр миграций
+
+```powershell
+dotnet ef migrations list `
+  --project src/Modules/Auth/VectraPKM.Auth.Infrastructure `
+  --startup-project src/VectraPKM.Api `
+  --context AuthDbContext `
+  -- --environment Development
+```
+
 Подробнее: [Auth](modules/auth.md).
