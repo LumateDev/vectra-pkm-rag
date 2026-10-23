@@ -2,8 +2,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
-    <ProjectReference Include="..\VectraPKM.Identity.Application\VectraPKM.Identity.Application.csproj" />
-    <ProjectReference Include="..\VectraPKM.Identity.Domain\VectraPKM.Identity.Domain.csproj" />
+    <ProjectReference Include="..\VectraPKM.Auth.Application\VectraPKM.Auth.Application.csproj" />
+    <ProjectReference Include="..\VectraPKM.Auth.Domain\VectraPKM.Auth.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using VectraPKM.Identity.Domain.Entities;
-using VectraPKM.Identity.Infrastructure.Identity;
+using VectraPKM.Auth.Domain.Entities;
+using VectraPKM.Auth.Infrastructure.Identity;
 
-namespace VectraPKM.Identity.Infrastructure.Persistence.Configurations;
+namespace VectraPKM.Auth.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// Настройки хранения refresh-токенов и их связи с пользователем.

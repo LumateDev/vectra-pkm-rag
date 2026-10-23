@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <ProjectReference Include="..\VectraPKM.Identity.Application\VectraPKM.Identity.Application.csproj" />
-    <ProjectReference Include="..\VectraPKM.Identity.Infrastructure\VectraPKM.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\VectraPKM.Auth.Application\VectraPKM.Auth.Application.csproj" />
+    <ProjectReference Include="..\VectraPKM.Auth.Infrastructure\VectraPKM.Auth.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using VectraPKM.Identity.Infrastructure.Identity;
+using VectraPKM.Auth.Infrastructure.Identity;
 
-namespace VectraPKM.Identity.Infrastructure.Persistence.Configurations;
+namespace VectraPKM.Auth.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// Дополнительные настройки хранения пользователя поверх стандартной модели Identity.

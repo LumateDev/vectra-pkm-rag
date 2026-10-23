@@ -5,7 +5,7 @@
 - [Архитектура модульного монолита](backend/architecture.md)
 - [Локальный запуск и конфигурация](backend/development.md)
 - [Логирование](backend/logging.md)
-- [Модуль Identity](backend/modules/identity.md)
+- [Модуль Auth](backend/modules/auth.md)
 
 ## Frontend
 

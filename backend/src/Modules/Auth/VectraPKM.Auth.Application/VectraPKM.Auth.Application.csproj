@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\VectraPKM.Identity.Domain\VectraPKM.Identity.Domain.csproj" />
+    <ProjectReference Include="..\VectraPKM.Auth.Domain\VectraPKM.Auth.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

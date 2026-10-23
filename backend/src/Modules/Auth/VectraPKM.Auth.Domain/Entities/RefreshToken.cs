@@ -1,4 +1,4 @@
-namespace VectraPKM.Identity.Domain.Entities;
+namespace VectraPKM.Auth.Domain.Entities;
 
 /// <summary>
 /// Хеш refresh-токена и сведения о его жизненном цикле.

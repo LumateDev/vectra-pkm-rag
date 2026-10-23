@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using VectraPKM.Identity.Domain.Entities;
-using VectraPKM.Identity.Infrastructure.Identity;
-using VectraPKM.Identity.Infrastructure.Persistence.Configurations;
+using VectraPKM.Auth.Domain.Entities;
+using VectraPKM.Auth.Infrastructure.Identity;
+using VectraPKM.Auth.Infrastructure.Persistence.Configurations;
 
-namespace VectraPKM.Identity.Infrastructure.Persistence;
+namespace VectraPKM.Auth.Infrastructure.Persistence;
 
 /// <summary>
-/// Контекст данных модуля Identity: пользователи и refresh-токены, без ролей.
+/// Контекст данных модуля Auth: пользователи и refresh-токены, без ролей.
 /// </summary>
-public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
+public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     : IdentityUserContext<ApplicationUser, Guid>(options)
 {
     /// <summary>

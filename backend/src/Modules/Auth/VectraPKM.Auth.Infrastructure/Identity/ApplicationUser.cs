@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace VectraPKM.Identity.Infrastructure.Identity;
+namespace VectraPKM.Auth.Infrastructure.Identity;
 
 /// <summary>
 /// Пользователь ASP.NET Core Identity с идентификатором UUID.

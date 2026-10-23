@@ -2,10 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/VectraPKM.Api/VectraPKM.Api.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/Identity/">
-    <Project Path="src/Modules/Identity/VectraPKM.Identity.Api/VectraPKM.Identity.Api.csproj" />
-    <Project Path="src/Modules/Identity/VectraPKM.Identity.Application/VectraPKM.Identity.Application.csproj" />
-    <Project Path="src/Modules/Identity/VectraPKM.Identity.Domain/VectraPKM.Identity.Domain.csproj" />
-    <Project Path="src/Modules/Identity/VectraPKM.Identity.Infrastructure/VectraPKM.Identity.Infrastructure.csproj" />
+  <Folder Name="/src/Modules/Auth/">
+    <Project Path="src/Modules/Auth/VectraPKM.Auth.Api/VectraPKM.Auth.Api.csproj" />
+    <Project Path="src/Modules/Auth/VectraPKM.Auth.Application/VectraPKM.Auth.Application.csproj" />
+    <Project Path="src/Modules/Auth/VectraPKM.Auth.Domain/VectraPKM.Auth.Domain.csproj" />
+    <Project Path="src/Modules/Auth/VectraPKM.Auth.Infrastructure/VectraPKM.Auth.Infrastructure.csproj" />
   </Folder>
 </Solution>
