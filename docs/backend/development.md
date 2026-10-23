@@ -23,7 +23,7 @@ Swagger включён только в Development. Контроллеров п�
 
 Конфигурация находится в хосте `src/VectraPKM.Api`. Все три файла хранятся в Git:
 
-- `appsettings.json` — общие настройки логирования и AllowedHosts.
+- `appsettings.json` — общие настройки логирования, AllowedHosts и ключ ConnectionStrings:Auth.
 - `appsettings.Development.json` — переопределение формата логов для разработки.
 - `appsettings.Production.json` — пока пустой файл для будущих production-настроек.
 
@@ -34,6 +34,4 @@ Example-файлов и User Secrets нет. Development исключён из �
 `Properties/launchSettings.json` задаёт локальные профили и окружение Development.
 Release/Debug — конфигурация сборки, она не выбирает окружение приложения.
 
-В модуле Auth подготовлены модели и контекст EF Core. Авторизации, подключения
-к БД, миграций и проверок регистрации/входа сейчас нет.
 Подробнее: [Auth](modules/auth.md).

@@ -16,5 +16,7 @@
 Каталог `Infrastructure/Identity` содержит интеграцию с фреймворком Microsoft,
 поэтому сохраняет название Identity.
 
-Endpoints, миграций, JWT и подключения к PostgreSQL пока нет.
-Регистрация сервисов модуля в хосте будет добавлена отдельно.
+Хост подключает модуль через `AddAuthModule`. Метод вызывает
+`AddAuthInfrastructure`, который регистрирует `AuthDbContext` с провайдером
+PostgreSQL и строкой подключения `ConnectionStrings:Auth`.
+

@@ -1,6 +1,7 @@
 using Microsoft.OpenApi;
 using Serilog;
 using VectraPKM.Api.Logging;
+using VectraPKM.Auth.Api;
 
 Log.Logger = LoggingExtensions.CreateBootstrapLogger("VectraPKM.Api");
 
@@ -8,6 +9,7 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
     builder.AddVectraLogging("VectraPKM.Api");
+    builder.Services.AddAuthModule(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddSwaggerGen(options =>
     {
