@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/VectraPKM.Auth.Tests/VectraPKM.Auth.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/VectraPKM.Api/VectraPKM.Api.csproj" />
   </Folder>

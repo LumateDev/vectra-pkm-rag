@@ -89,3 +89,11 @@ dotnet ef migrations list `
 ```
 
 Подробнее: [Auth](modules/auth.md).
+
+## Тесты паролей
+
+Из каталога `backend`:
+
+```shell
+dotnet test tests/VectraPKM.Auth.Tests
+```
