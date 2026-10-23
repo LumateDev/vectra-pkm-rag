@@ -8,3 +8,7 @@
 *.db-shm
 *.db-wal
 
+# Local environment configuration
+**/appsettings.Development.json
+**/appsettings.Production.json
+
