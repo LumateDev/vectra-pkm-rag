@@ -1,0 +1,40 @@
+@use 'sass:map';
+
+// Semantic token contract. Every theme must define exactly these keys.
+$tokens: (
+  'app-background': 'Фон приложения',
+  'app-surface': 'Карточки и активные вкладки',
+  'app-surface-soft': 'Подложки вкладок и второстепенных блоков',
+  'app-text': 'Основной текст',
+  'app-muted': 'Второстепенный текст',
+  'app-border': 'Границы карточек и полей',
+  'app-link': 'Ссылки и индикатор фокуса',
+  'app-primary': 'Основное действие и знак бренда',
+  'app-on-primary': 'Текст на основном действии',
+  'app-negative': 'Ошибки валидации',
+  'app-notice': 'Фон информационного сообщения',
+  'app-card-shadow': 'Тень карточки',
+  'app-tab-shadow': 'Тень активной вкладки',
+);
+
+// Validate token names in component styles at compile time.
+@function token($name) {
+  @if not map.has-key($tokens, $name) {
+    @error 'Unknown theme token: #{$name}';
+  }
+  @return var(--#{$name});
+}
+
+@mixin emit($values) {
+  @each $name, $description in $tokens {
+    @if not map.has-key($values, $name) or map.get($values, $name) == null {
+      @error 'Missing theme token: #{$name} (#{$description})';
+    }
+  }
+  @each $name, $value in $values {
+    @if not map.has-key($tokens, $name) {
+      @error 'Unknown theme token: #{$name}';
+    }
+    --#{$name}: #{$value};
+  }
+}

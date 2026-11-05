@@ -1,0 +1,21 @@
+@use 'contract';
+@use 'light';
+@use 'dark';
+
+:root {
+  @include contract.emit(light.$tokens);
+  color-scheme: light;
+}
+
+body.body--dark {
+  @include contract.emit(dark.$tokens);
+  color-scheme: dark;
+}
+
+// Quasar components consume the same semantic palette as app components.
+body {
+  --q-primary: #{contract.token('app-primary')};
+  --q-negative: #{contract.token('app-negative')};
+  --q-dark: #{contract.token('app-surface')};
+  --q-dark-page: #{contract.token('app-background')};
+}

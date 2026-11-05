@@ -1,0 +1,27 @@
+@use 'theme';
+@use 'theme/contract' as theme-contract;
+
+:root {
+  font-size: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body.body--light,
+body.body--dark {
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: theme-contract.token('app-background');
+  color: theme-contract.token('app-text');
+}
+
+a {
+  color: theme-contract.token('app-link');
+  text-underline-offset: 4px;
+
+  &:focus-visible {
+    outline: 2px solid theme-contract.token('app-link');
+    outline-offset: 4px;
+  }
+}
