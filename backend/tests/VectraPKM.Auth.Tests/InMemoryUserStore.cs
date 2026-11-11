@@ -3,7 +3,10 @@ using VectraPKM.Auth.Infrastructure.Identity;
 
 namespace VectraPKM.Auth.Tests;
 
-// Minimal test double for UserManager password scenarios. Not a production persistence implementation.
+/// <summary>
+/// Тестовая замена хранилища пользователей: данные находятся в словаре, обращения к БД нет.
+/// Используется для проверки работы UserManager, но не проверяет SQL и ограничения PostgreSQL.
+/// </summary>
 internal sealed class InMemoryUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>
 {
     internal Dictionary<Guid, ApplicationUser> Users { get; } = [];

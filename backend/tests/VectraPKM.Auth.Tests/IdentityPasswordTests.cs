@@ -6,9 +6,16 @@ using Xunit;
 
 namespace VectraPKM.Auth.Tests;
 
+/// <summary>
+/// Проверки хеширования и парольной политики Identity без подключения к БД.
+/// </summary>
 public sealed class IdentityPasswordTests
 {
-    [Fact]
+    /// <summary>
+    /// При создании пользователя сохраняется хеш. Исходный пароль подходит,
+    /// неверный пароль и исходный пароль без крайних пробелов не подходят.
+    /// </summary>
+    [Fact(DisplayName = "Пароль: сохраняется хеш, неверный пароль отклоняется, пробелы значимы")]
     public async Task UserManager_stores_only_hash_and_rejects_incorrect_password()
     {
         using var services = PasswordTestServices.Create();
@@ -27,7 +34,11 @@ public sealed class IdentityPasswordTests
         Assert.False(await manager.CheckPasswordAsync(user, password.Trim()));
     }
 
-    [Theory]
+    /// <summary>
+    /// Пароли ровно из 8 и 128 символов принимаются и затем успешно проходят проверку.
+    /// </summary>
+    /// <param name="length">Минимальная или максимальная разрешённая длина пароля.</param>
+    [Theory(DisplayName = "Пароль: длина 8 и 128 символов разрешена")]
     [InlineData(8)]
     [InlineData(128)]
     public async Task Passwords_at_both_length_boundaries_are_accepted(int length)
@@ -42,7 +53,13 @@ public sealed class IdentityPasswordTests
         Assert.True(await manager.CheckPasswordAsync(user, password));
     }
 
-    [Theory]
+    /// <summary>
+    /// Пароли длиной 0, 7, 129 и 1024 символа отклоняются с ожидаемым кодом ошибки.
+    /// Хеш не создаётся, пользователь в хранилище не появляется.
+    /// </summary>
+    /// <param name="length">Недопустимая длина пароля.</param>
+    /// <param name="expectedCode">Ожидаемый код ошибки минимальной или максимальной длины.</param>
+    [Theory(DisplayName = "Пароль: недопустимая длина отклоняется до хеширования и сохранения")]
     [InlineData(0, "PasswordTooShort")]
     [InlineData(7, "PasswordTooShort")]
     [InlineData(129, "PasswordTooLong")]
@@ -63,7 +80,12 @@ public sealed class IdentityPasswordTests
         Assert.Empty(store.Users);
     }
 
-    [Theory]
+    /// <summary>
+    /// Пароли из одинаковых букв, только цифр, только спецсимволов и пароль с кириллицей
+    /// принимаются: обязательных сочетаний классов символов у нас нет.
+    /// </summary>
+    /// <param name="password">Пароль, не соответствующий стандартным требованиям сложности Identity.</param>
+    [Theory(DisplayName = "Пароль: сочетание букв, цифр и спецсимволов не обязательно")]
     [InlineData("aaaaaaaa")]
     [InlineData("AAAAAAAA")]
     [InlineData("12345678")]
@@ -80,7 +102,11 @@ public sealed class IdentityPasswordTests
         Assert.True(await manager.CheckPasswordAsync(user, password));
     }
 
-    [Fact]
+    /// <summary>
+    /// Хеш с 10 000 итераций после успешной проверки заменяется хешем с актуальными параметрами.
+    /// Проверяется вызов обновления хранилища и отсутствие необходимости повторного перехеширования.
+    /// </summary>
+    [Fact(DisplayName = "Пароль: устаревший хеш обновляется после успешной проверки")]
     public async Task Identity_rehashes_an_old_password_hash_after_successful_verification()
     {
         using var services = PasswordTestServices.Create();
@@ -102,7 +128,10 @@ public sealed class IdentityPasswordTests
         Assert.True(services.GetRequiredService<InMemoryUserStore>().UpdateCount > 0);
     }
 
-    [Fact]
+    /// <summary>
+    /// В DI зарегистрирован стандартный PasswordHasher Identity, а не собственная реализация.
+    /// </summary>
+    [Fact(DisplayName = "Пароль: используется встроенный PasswordHasher Identity")]
     public void Identity_uses_the_builtin_password_hasher()
     {
         using var services = PasswordTestServices.Create();
@@ -112,7 +141,11 @@ public sealed class IdentityPasswordTests
         Assert.IsType<PasswordHasher<ApplicationUser>>(hasher);
     }
 
-    [Fact]
+    /// <summary>
+    /// Один пароль у двух пользователей получает разные хеши благодаря случайной соли.
+    /// Оба пользователя при этом успешно проходят проверку исходным паролем.
+    /// </summary>
+    [Fact(DisplayName = "Пароль: одинаковые пароли получают разные действительные хеши")]
     public async Task Same_password_produces_distinct_hashes_that_both_verify()
     {
         using var services = PasswordTestServices.Create();
@@ -130,7 +163,13 @@ public sealed class IdentityPasswordTests
         Assert.True(await manager.CheckPasswordAsync(second, password));
     }
 
-    [Theory]
+    /// <summary>
+    /// Исходный пароль с учётом регистра и Unicode подходит,
+    /// а вариант с другим регистром или другим emoji не подходит.
+    /// </summary>
+    /// <param name="password">Исходный пароль.</param>
+    /// <param name="differentPassword">Похожий, но отличающийся пароль, который должен быть отклонён.</param>
+    [Theory(DisplayName = "Пароль: регистр и символы Unicode значимы")]
     [InlineData("Password", "password")]
     [InlineData("пароль🙂", "пароль🙃")]
     public async Task Verification_preserves_case_and_unicode(string password, string differentPassword)
@@ -145,7 +184,10 @@ public sealed class IdentityPasswordTests
         Assert.False(await manager.CheckPasswordAsync(user, differentPassword));
     }
 
-    [Fact]
+    /// <summary>
+    /// Изменение одного бита в сохранённом хеше приводит к отказу проверки даже с верным паролем.
+    /// </summary>
+    [Fact(DisplayName = "Пароль: подменённый хеш не проходит проверку")]
     public async Task Tampered_hash_is_rejected()
     {
         using var services = PasswordTestServices.Create();
@@ -160,9 +202,13 @@ public sealed class IdentityPasswordTests
         Assert.False(await manager.CheckPasswordAsync(user, "password"));
     }
 
+    /// <summary>
+    /// Создаёт пользователя с уникальными допустимыми именем и email,
+    /// чтобы парольные тесты не зависели от совпадения учётных данных.
+    /// </summary>
     private static ApplicationUser NewUser()
     {
-        var email = Guid.NewGuid().ToString("N") + "@example.com";
-        return new ApplicationUser { UserName = email, Email = email };
+        var userName = Guid.NewGuid().ToString("N");
+        return new ApplicationUser { UserName = userName, Email = userName + "@example.com" };
     }
 }

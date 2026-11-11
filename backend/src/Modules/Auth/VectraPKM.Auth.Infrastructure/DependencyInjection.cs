@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddIdentityCore<ApplicationUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
+            options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-";
 
             options.Password.RequiredLength = 8;
             options.Password.RequiredUniqueChars = 1;
@@ -51,6 +52,7 @@ public static class DependencyInjection
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         })
             .AddEntityFrameworkStores<AuthDbContext>()
+            .AddUserValidator<UserNameLengthValidator>()
             .AddPasswordValidator<MaximumPasswordLengthValidator>();
 
         return services;
