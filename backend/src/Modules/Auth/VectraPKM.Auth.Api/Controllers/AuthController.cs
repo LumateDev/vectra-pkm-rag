@@ -25,6 +25,37 @@ public sealed class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Проверяет имя пользователя или email и пароль. Поле accessToken пока содержит заглушку temptoken вместо JWT.
+    /// </summary>
+    /// <param name="request">Имя пользователя или email и пароль пользователя.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpPost]
+    [AllowAnonymous]
+    [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResult<AuthResponse>>> Auth(
+        [FromBody] AuthRequest request,
+        CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = "no-store";
+        try
+        {
+            await _authService.AuthAsync(
+                new AuthenticationData(request.Login, request.Password), cancellationToken);
+
+            // TODO: выдавать JWT с userId, email и userName из AuthenticationResult вместо заглушки.
+            var response = new AuthResponse("temptoken");
+            return Ok(new ApiResult<AuthResponse>(response));
+        }
+        catch (AuthUnauthorizedException exception)
+        {
+            return Unauthorized(new ApiResult<AuthResponse>(error: exception.Message));
+        }
+    }
+
+    /// <summary>
     /// Создаёт учётную запись без автоматического входа и выдачи токенов.
     /// </summary>
     /// <param name="request">Email, имя пользователя и пароль.</param>

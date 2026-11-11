@@ -113,7 +113,8 @@ public sealed class RegistrationTests
     /// <summary>Создаёт настоящий контроллер и сервис с инфраструктурной реализацией регистрации.</summary>
     private static AuthController CreateController(IServiceProvider services)
     {
-        var auth = new AuthService(services.GetRequiredService<IUserRegistration>());
+        var auth = new AuthService(services.GetRequiredService<IUserRegistration>(),
+            services.GetRequiredService<IUserAuthentication>());
         return new AuthController(auth)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }

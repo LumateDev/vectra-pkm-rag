@@ -9,13 +9,22 @@ namespace VectraPKM.Auth.Application;
 public sealed class AuthService : IAuthService
 {
     private readonly IUserRegistration _userRegistration;
+    private readonly IUserAuthentication _userAuthentication;
 
     /// <summary>
-    /// Создаёт сервис с инфраструктурной реализацией регистрации пользователей.
+    /// Создаёт сервис с инфраструктурными реализациями регистрации и проверки учётных данных.
     /// </summary>
-    public AuthService(IUserRegistration userRegistration)
+    public AuthService(IUserRegistration userRegistration, IUserAuthentication userAuthentication)
     {
         _userRegistration = userRegistration;
+        _userAuthentication = userAuthentication;
+    }
+
+    /// <inheritdoc />
+    public Task<AuthenticationResult> AuthAsync(AuthenticationData data, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        return _userAuthentication.AuthenticateAsync(data, cancellationToken);
     }
 
     /// <inheritdoc />

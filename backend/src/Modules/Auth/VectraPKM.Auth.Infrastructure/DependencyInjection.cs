@@ -56,6 +56,7 @@ public static class DependencyInjection
             .AddPasswordValidator<MaximumPasswordLengthValidator>();
 
         services.AddScoped<IUserRegistration, IdentityUserRegistration>();
+        services.AddScoped<IUserAuthentication, IdentityUserAuthentication>();
 
         return services;
     }
