@@ -1,6 +1,10 @@
 <Solution>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/VectraPKM.Shared.Api/VectraPKM.Shared.Api.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/VectraPKM.Auth.Tests/VectraPKM.Auth.Tests.csproj" />
+    <Project Path="tests/VectraPKM.Shared.Api.Tests/VectraPKM.Shared.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/VectraPKM.Api/VectraPKM.Api.csproj" />

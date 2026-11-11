@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VectraPKM.Auth.Application.Abstractions;
 using VectraPKM.Auth.Infrastructure.Identity;
 using VectraPKM.Auth.Infrastructure.Persistence;
 
@@ -54,6 +54,8 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddUserValidator<UserNameLengthValidator>()
             .AddPasswordValidator<MaximumPasswordLengthValidator>();
+
+        services.AddScoped<IUserRegistration, IdentityUserRegistration>();
 
         return services;
     }

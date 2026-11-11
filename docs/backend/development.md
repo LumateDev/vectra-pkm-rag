@@ -15,9 +15,11 @@ dotnet run --project src/VectraPKM.Api --launch-profile http
 - Swagger UI: http://localhost:5000/swagger
 - OpenAPI: http://localhost:5000/swagger/v1/swagger.json
 
-Swagger включён только в Development. Контроллеров пока нет: список операций
-пустой. Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
-База данных и ключ JWT для запуска сейчас не требуются.
+Swagger включён только в Development. В нём доступен `POST /auth/register`.
+Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
+Для регистрации требуется доступная PostgreSQL с применённой миграцией Auth
+и строка подключения `ConnectionStrings:Auth`. При старте миграции не применяются.
+Ключ JWT пока не требуется.
 
 ## Конфигурация
 
@@ -90,10 +92,28 @@ dotnet ef migrations list `
 
 Подробнее: [Auth](modules/auth.md).
 
-## Тесты паролей
+## Тесты
 
 Из каталога `backend`:
 
 ```shell
 dotnet test tests/VectraPKM.Auth.Tests
 ```
+
+Тесты общего HTTP-контракта, не зависящие от Auth и других модулей:
+
+```shell
+dotnet test tests/VectraPKM.Shared.Api.Tests
+```
+
+В `VectraPKM.Shared.Api.Tests` сериализация `ApiResult<T>` проверяется один раз
+на простой тестовой модели. В тестах модулей проверяется их собственное поведение;
+повторять проверки общего конверта для каждого модуля не нужно.
+
+
+Автоматическая проверка HTTP-модели выполняется до вызова `AuthService`;
+Identity повторно проверяет свои правила при создании пользователя.
+Контроллер возвращает `ApiResult<T>` для успеха и ожидаемых ошибок сервиса.
+Автоматические ошибки MVC пока остаются в стандартном формате ASP.NET Core:
+общего преобразования ошибок нет. Неожиданные исключения также не перехватываются
+контроллером. Поле `error` в `ApiResult` содержит только строку сообщения.

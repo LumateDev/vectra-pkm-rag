@@ -3,9 +3,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\..\Shared\VectraPKM.Shared.Api\VectraPKM.Shared.Api.csproj" />
     <ProjectReference Include="..\VectraPKM.Auth.Application\VectraPKM.Auth.Application.csproj" />
     <ProjectReference Include="..\VectraPKM.Auth.Infrastructure\VectraPKM.Auth.Infrastructure.csproj" />
   </ItemGroup>

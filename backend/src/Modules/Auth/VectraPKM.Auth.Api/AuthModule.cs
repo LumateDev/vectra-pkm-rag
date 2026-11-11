@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VectraPKM.Auth.Api.Controllers;
+using VectraPKM.Auth.Application;
 using VectraPKM.Auth.Infrastructure;
 
 namespace VectraPKM.Auth.Api;
@@ -20,6 +22,8 @@ public static class AuthModule
         IConfiguration configuration)
     {
         services.AddAuthInfrastructure(configuration);
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
 
         return services;
     }
