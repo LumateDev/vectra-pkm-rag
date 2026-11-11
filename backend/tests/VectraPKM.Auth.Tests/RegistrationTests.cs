@@ -14,7 +14,7 @@ namespace VectraPKM.Auth.Tests;
 
 /// <summary>
 /// Базовые проверки цепочки регистрации: контроллер, AuthService и Identity.
-/// Контроллер вызывается напрямую; вместо БД используется хранилище в памяти.
+/// Контроллер вызывается напрямую; EF-хранилище использует провайдер InMemory вместо PostgreSQL.
 /// </summary>
 public sealed class RegistrationTests
 {
@@ -25,7 +25,7 @@ public sealed class RegistrationTests
     [Fact(DisplayName = "Регистрация: создаёт пользователя и возвращает 201 без cookie")]
     public async Task Register_creates_user_and_returns_public_data()
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var controller = CreateController(scope.ServiceProvider);
         var request = new RegisterRequest { Email = "alex@example.com", UserName = "Alex", Password = " password " };
@@ -40,7 +40,7 @@ public sealed class RegistrationTests
         Assert.NotEqual(Guid.Empty, user.UserId);
         Assert.Equal(request.Email, user.Email);
         Assert.Equal(request.UserName, user.UserName);
-        var stored = Assert.Single(services.GetRequiredService<InMemoryUserStore>().Users.Values);
+        var stored = Assert.Single(await AuthTestServices.ReadUsersAsync(services));
         Assert.Equal(user.UserId, stored.Id);
         Assert.NotNull(stored.PasswordHash);
         Assert.NotEqual(request.Password, stored.PasswordHash);
@@ -56,7 +56,7 @@ public sealed class RegistrationTests
     [Fact(DisplayName = "Регистрация: повторный email возвращает 409 и сообщение")]
     public async Task Duplicate_email_returns_conflict()
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var controller = CreateController(scope.ServiceProvider);
         await controller.Register(new RegisterRequest { Email = "alex@example.com", UserName = "Alex", Password = "password" }, default);
@@ -65,7 +65,7 @@ public sealed class RegistrationTests
 
         var result = AssertError(response, StatusCodes.Status409Conflict);
         Assert.Equal("Этот email уже используется.", result.Error);
-        Assert.Single(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Single(await AuthTestServices.ReadUsersAsync(services));
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed class RegistrationTests
     [Fact(DisplayName = "Регистрация: повторный username возвращает 409 и сообщение")]
     public async Task Duplicate_username_returns_conflict()
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var controller = CreateController(scope.ServiceProvider);
         await controller.Register(new RegisterRequest { Email = "alex@example.com", UserName = "Alex", Password = "password" }, default);
@@ -84,7 +84,7 @@ public sealed class RegistrationTests
 
         var result = AssertError(response, StatusCodes.Status409Conflict);
         Assert.Equal("Это имя пользователя уже используется.", result.Error);
-        Assert.Single(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Single(await AuthTestServices.ReadUsersAsync(services));
     }
 
     /// <summary>
@@ -100,14 +100,14 @@ public sealed class RegistrationTests
     [InlineData("alex@example.com", "Alex", "short")]
     public async Task Invalid_fields_return_validation_error(string email, string userName, string password)
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var controller = CreateController(scope.ServiceProvider);
 
         var response = await controller.Register(new RegisterRequest { Email = email, UserName = userName, Password = password }, default);
 
         AssertError(response, StatusCodes.Status400BadRequest);
-        Assert.Empty(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Empty(await AuthTestServices.ReadUsersAsync(services));
     }
 
     /// <summary>Создаёт настоящий контроллер и сервис с инфраструктурной реализацией регистрации.</summary>

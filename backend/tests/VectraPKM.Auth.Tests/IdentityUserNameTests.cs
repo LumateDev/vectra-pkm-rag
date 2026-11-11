@@ -19,7 +19,7 @@ public sealed class IdentityUserNameTests
     [InlineData(32)]
     public async Task Usernames_at_both_length_boundaries_are_accepted(int length)
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = NewUser(new string('a', length));
@@ -37,7 +37,7 @@ public sealed class IdentityUserNameTests
     [InlineData(33)]
     public async Task Usernames_outside_length_boundaries_are_not_stored(int length)
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
@@ -45,7 +45,7 @@ public sealed class IdentityUserNameTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Code == "UserNameLength");
-        Assert.Empty(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Empty(await AuthTestServices.ReadUsersAsync(services));
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public sealed class IdentityUserNameTests
     [InlineData("alex+test")]
     public async Task Missing_usernames_and_disallowed_characters_are_rejected(string? userName)
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
@@ -72,7 +72,7 @@ public sealed class IdentityUserNameTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Code == "InvalidUserName");
-        Assert.Empty(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Empty(await AuthTestServices.ReadUsersAsync(services));
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class IdentityUserNameTests
     [Fact(DisplayName = "Username: допустимые символы и исходный регистр сохраняются")]
     public async Task Latin_letters_digits_and_allowed_punctuation_are_accepted_and_preserved()
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = NewUser("Alex_01.test-user");
@@ -96,7 +96,7 @@ public sealed class IdentityUserNameTests
     [Fact(DisplayName = "Username: уникальность и поиск не зависят от регистра")]
     public async Task Usernames_are_unique_and_searchable_without_case_sensitivity()
     {
-        using var services = PasswordTestServices.Create();
+        using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var first = NewUser("Alex");
@@ -106,7 +106,7 @@ public sealed class IdentityUserNameTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Code == "DuplicateUserName");
-        Assert.Single(services.GetRequiredService<InMemoryUserStore>().Users);
+        Assert.Single(await AuthTestServices.ReadUsersAsync(services));
         Assert.Equal(first.Id, (await manager.FindByNameAsync("aLeX"))!.Id);
     }
 
