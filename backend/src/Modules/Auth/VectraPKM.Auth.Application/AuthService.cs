@@ -10,21 +10,26 @@ public sealed class AuthService : IAuthService
 {
     private readonly IUserRegistration _userRegistration;
     private readonly IUserAuthentication _userAuthentication;
+    private readonly IAccessTokenIssuer _accessTokenIssuer;
 
     /// <summary>
     /// Создаёт сервис с инфраструктурными реализациями регистрации и проверки учётных данных.
     /// </summary>
-    public AuthService(IUserRegistration userRegistration, IUserAuthentication userAuthentication)
+    public AuthService(IUserRegistration userRegistration, IUserAuthentication userAuthentication,
+        IAccessTokenIssuer accessTokenIssuer)
     {
         _userRegistration = userRegistration;
         _userAuthentication = userAuthentication;
+        _accessTokenIssuer = accessTokenIssuer;
     }
 
     /// <inheritdoc />
-    public Task<AuthenticationResult> AuthAsync(AuthenticationData data, CancellationToken cancellationToken = default)
+    public async Task<SignInResult> AuthAsync(AuthenticationData data, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(data);
-        return _userAuthentication.AuthenticateAsync(data, cancellationToken);
+        var user = await _userAuthentication.AuthenticateAsync(data, cancellationToken);
+        var sessionId = Guid.NewGuid();
+        return new SignInResult(user, _accessTokenIssuer.Issue(user.UserId, sessionId));
     }
 
     /// <inheritdoc />

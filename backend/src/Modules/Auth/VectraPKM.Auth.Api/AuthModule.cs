@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using VectraPKM.Auth.Api.Controllers;
+using VectraPKM.Auth.Api.Extensions;
 using VectraPKM.Auth.Application;
 using VectraPKM.Auth.Infrastructure;
 
@@ -24,6 +25,7 @@ public static class AuthModule
         services.AddAuthInfrastructure(configuration);
         services.AddScoped<IAuthService, AuthService>();
         services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
+        services.AddJwtBearerApiResponses();
 
         return services;
     }

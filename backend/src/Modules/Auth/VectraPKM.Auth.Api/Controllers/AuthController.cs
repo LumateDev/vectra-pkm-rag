@@ -25,7 +25,7 @@ public sealed class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Проверяет имя пользователя или email и пароль. Поле accessToken пока содержит заглушку temptoken вместо JWT.
+    /// Проверяет имя пользователя или email и пароль и выдаёт JWT с настроенным сроком действия.
     /// </summary>
     /// <param name="request">Имя пользователя или email и пароль пользователя.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
@@ -42,11 +42,9 @@ public sealed class AuthController : ControllerBase
         Response.Headers.CacheControl = "no-store";
         try
         {
-            await _authService.AuthAsync(
-                new AuthenticationData(request.Login, request.Password), cancellationToken);
-
-            // TODO: выдавать JWT с userId, email и userName из AuthenticationResult вместо заглушки.
-            var response = new AuthResponse("temptoken");
+            var result = await _authService.AuthAsync(new AuthenticationData(request.Login, request.Password), cancellationToken);
+            var userData = new AuthUserResponse(result.User.UserId, result.User.Email, result.User.UserName);
+            var response = new AuthResponse(result.Token.Value, result.Token.ExpiresAt, userData);
             return Ok(new ApiResult<AuthResponse>(response));
         }
         catch (AuthUnauthorizedException exception)

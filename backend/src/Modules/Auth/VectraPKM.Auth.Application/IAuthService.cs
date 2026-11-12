@@ -8,7 +8,7 @@ namespace VectraPKM.Auth.Application;
 public interface IAuthService
 {
     /// <summary>Проверяет имя пользователя или email и пароль с учётом блокировки.</summary>
-    Task<AuthenticationResult> AuthAsync(AuthenticationData data, CancellationToken cancellationToken = default);
+    Task<SignInResult> AuthAsync(AuthenticationData data, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Регистрирует пользователя без создания сессии и выдачи токенов.

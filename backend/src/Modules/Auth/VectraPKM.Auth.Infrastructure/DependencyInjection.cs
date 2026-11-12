@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using VectraPKM.Auth.Application.Abstractions;
 using VectraPKM.Auth.Infrastructure.Identity;
 using VectraPKM.Auth.Infrastructure.Persistence;
+using VectraPKM.Auth.Infrastructure.Authentication;
 
 namespace VectraPKM.Auth.Infrastructure;
 
@@ -57,6 +58,7 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRegistration, IdentityUserRegistration>();
         services.AddScoped<IUserAuthentication, IdentityUserAuthentication>();
+        services.AddJwtAuthentication(configuration);
 
         return services;
     }

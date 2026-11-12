@@ -1,4 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,12 +20,12 @@ namespace VectraPKM.Auth.Tests;
 /// <summary>Проверки входа через контроллер, прикладной сервис и настоящий UserManager.</summary>
 public sealed class AuthenticationTests
 {
-    /// <summary>Вход по email или username без учёта регистра сохраняет пробелы пароля и возвращает 200 с заглушкой токена.</summary>
+    /// <summary>Вход по email или username без учёта регистра сохраняет пробелы пароля и возвращает 200 с подписанным JWT и данными пользователя.</summary>
     /// <param name="login">Email или имя существующего пользователя в другом регистре.</param>
-    [Theory(DisplayName = "Авторизация: верный пароль возвращает временный accessToken")]
+    [Theory(DisplayName = "Авторизация: верный пароль возвращает JWT")]
     [InlineData("ALEX@example.com")]
     [InlineData("aLEX")]
-    public async Task Auth_returns_temporary_access_token(string login)
+    public async Task Auth_returns_signed_access_token(string login)
     {
         using var services = AuthTestServices.Create();
         using var scope = services.CreateScope();
@@ -32,9 +37,107 @@ public sealed class AuthenticationTests
         var envelope = Assert.IsType<ApiResult<AuthResponse>>(result.Value);
         Assert.Null(envelope.Error);
         var data = Assert.IsType<AuthResponse>(envelope.Data);
-        Assert.Equal("temptoken", data.AccessToken);
+        var parameters = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme).TokenValidationParameters;
+        var principal = new JwtSecurityTokenHandler { MapInboundClaims = false }
+            .ValidateToken(data.AccessToken, parameters, out var validatedToken);
+        var jwt = Assert.IsType<JwtSecurityToken>(validatedToken);
+        Assert.Equal(SecurityAlgorithms.HmacSha256, jwt.Header.Alg);
+        Assert.Equal(data.User.Id.ToString(), principal.FindFirst("sub")?.Value);
+        Assert.True(Guid.TryParse(principal.FindFirst("sid")?.Value, out var sessionId));
+        Assert.NotEqual(Guid.Empty, sessionId);
+        Assert.Equal("VectraPKM.Tests", jwt.Issuer);
+        Assert.Equal("VectraPKM.Tests.Api", Assert.Single(jwt.Audiences));
+        Assert.Equal("alex@example.com", data.User.Email);
+        Assert.Equal("Alex", data.User.UserName);
+        Assert.DoesNotContain(jwt.Claims, claim => claim.Type is "email" or "userName" or "username");
+        Assert.False(string.IsNullOrWhiteSpace(jwt.Id));
+        Assert.Equal(data.ExpiresAt.UtcDateTime, jwt.ValidTo);
+        Assert.Equal(TimeSpan.FromMinutes(15), jwt.ValidTo - jwt.ValidFrom);
         Assert.Equal("no-store", controller.Response.Headers.CacheControl.ToString());
         Assert.False(controller.Response.Headers.ContainsKey("Set-Cookie"));
+    }
+
+    /// <summary>Два успешных входа одного пользователя создают разные sid и разные идентификаторы access-токенов.</summary>
+    [Fact(DisplayName = "Авторизация: каждый вход получает отдельный sid")]
+    public async Task Separate_logins_have_distinct_session_ids()
+    {
+        using var services = AuthTestServices.Create();
+        using var scope = services.CreateScope();
+        var controller = await CreateRegisteredController(scope.ServiceProvider);
+        var request = new AuthRequest { Login = "Alex", Password = " password " };
+
+        var first = Assert.IsType<OkObjectResult>((await controller.Auth(request, default)).Result);
+        var second = Assert.IsType<OkObjectResult>((await controller.Auth(request, default)).Result);
+        var handler = new JwtSecurityTokenHandler();
+        var firstToken = handler.ReadJwtToken(Assert.IsType<ApiResult<AuthResponse>>(first.Value).Data!.AccessToken);
+        var secondToken = handler.ReadJwtToken(Assert.IsType<ApiResult<AuthResponse>>(second.Value).Data!.AccessToken);
+
+        Assert.Equal(firstToken.Subject, secondToken.Subject);
+        Assert.NotEqual(firstToken.Claims.Single(claim => claim.Type == "sid").Value,
+            secondToken.Claims.Single(claim => claim.Type == "sid").Value);
+        Assert.NotEqual(firstToken.Id, secondToken.Id);
+    }
+
+    /// <summary>Проверка JWT отклоняет неверную подпись, алгоритм, издателя, получателя и истёкший срок.</summary>
+    /// <param name="failure">Изменяемая часть параметров проверки или времени.</param>
+    [Theory(DisplayName = "Авторизация: JWT отклоняется при неверных параметрах или истечении срока")]
+    [InlineData("signature")]
+    [InlineData("issuer")]
+    [InlineData("audience")]
+    [InlineData("expiration")]
+    [InlineData("algorithm")]
+    public async Task Invalid_jwt_is_rejected(string failure)
+    {
+        using var services = AuthTestServices.Create();
+        using var scope = services.CreateScope();
+        var controller = await CreateRegisteredController(scope.ServiceProvider);
+        var response = await controller.Auth(new AuthRequest { Login = "Alex", Password = " password " }, default);
+        var result = Assert.IsType<OkObjectResult>(response.Result);
+        var data = Assert.IsType<ApiResult<AuthResponse>>(result.Value).Data!;
+        var parameters = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme).TokenValidationParameters.Clone();
+        var token = data.AccessToken;
+        switch (failure)
+        {
+            case "signature": parameters.IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes("Another-Test-Signing-Key-That-Is-At-Least-Thirty-Two-Bytes-Long-2026")); break;
+            case "issuer": parameters.ValidIssuer = "other-issuer"; break;
+            case "audience": parameters.ValidAudience = "other-audience"; break;
+            case "expiration":
+            case "algorithm":
+                // Подписываем тестовым ключом истёкший токен или токен с запрещённым алгоритмом.
+                {
+                    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthTestServices.JwtKey));
+                    var jwt = new JwtSecurityToken("VectraPKM.Tests", "VectraPKM.Tests.Api",
+                        notBefore: DateTime.UtcNow.AddDays(-2),
+                        expires: failure == "expiration" ? DateTime.UtcNow.AddDays(-1) : DateTime.UtcNow.AddMinutes(15),
+                        signingCredentials: new SigningCredentials(signingKey,
+                            failure == "algorithm" ? SecurityAlgorithms.HmacSha512 : SecurityAlgorithms.HmacSha256));
+                    token = new JwtSecurityTokenHandler().WriteToken(jwt);
+                }
+                break;
+        }
+
+        Assert.ThrowsAny<SecurityTokenException>(() => new JwtSecurityTokenHandler()
+            .ValidateToken(token, parameters, out _));
+    }
+
+    /// <summary>Выпуск JWT использует срок из настроек вместо жёстко заданных 15 минут.</summary>
+    [Fact(DisplayName = "Авторизация: срок JWT берётся из конфигурации")]
+    public async Task Access_token_lifetime_uses_configuration()
+    {
+        using var services = AuthTestServices.Create(accessTokenLifetimeMinutes: 7);
+        using var scope = services.CreateScope();
+        var controller = await CreateRegisteredController(scope.ServiceProvider);
+
+        var response = await controller.Auth(new AuthRequest { Login = "Alex", Password = " password " }, default);
+
+        var result = Assert.IsType<OkObjectResult>(response.Result);
+        var data = Assert.IsType<ApiResult<AuthResponse>>(result.Value).Data!;
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(data.AccessToken);
+        Assert.Equal(TimeSpan.FromMinutes(7), jwt.ValidTo - jwt.ValidFrom);
+        Assert.Equal(data.ExpiresAt.UtcDateTime, jwt.ValidTo);
     }
 
     /// <summary>Неизвестный email или username и неверный пароль дают одинаковый 401 без данных и токена.</summary>
@@ -114,7 +217,7 @@ public sealed class AuthenticationTests
     /// <summary>Создаёт контроллер с настоящими сервисами и регистрирует пользователя для проверки входа.</summary>
     private static async Task<AuthController> CreateRegisteredController(IServiceProvider services)
     {
-        var auth = new AuthService(services.GetRequiredService<IUserRegistration>(), services.GetRequiredService<IUserAuthentication>());
+        var auth = new AuthService(services.GetRequiredService<IUserRegistration>(), services.GetRequiredService<IUserAuthentication>(), services.GetRequiredService<IAccessTokenIssuer>());
         var controller = new AuthController(auth)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
