@@ -5,6 +5,7 @@ using VectraPKM.Auth.Application.Abstractions;
 using VectraPKM.Auth.Infrastructure.Identity;
 using VectraPKM.Auth.Infrastructure.Persistence;
 using VectraPKM.Auth.Infrastructure.Authentication;
+using VectraPKM.Shared.Infrastructure.Persistence;
 
 namespace VectraPKM.Auth.Infrastructure;
 
@@ -34,7 +35,7 @@ public static class DependencyInjection
         }
 
         services.AddDbContext<AuthDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString).AddInterceptors(new ForUpdateInterceptor()));
 
         services.AddIdentityCore<ApplicationUser>(options =>
         {

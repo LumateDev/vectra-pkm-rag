@@ -31,6 +31,29 @@ endpoints и подключение модуля, включая регистр�
 `src/Shared/VectraPKM.Shared.Api` содержит общий HTTP-контракт `ApiResult<T>`.
 Он используется Api-проектами модулей; Domain и Application от него не зависят.
 
+`src/Shared/VectraPKM.Shared.Infrastructure` содержит общие механизмы EF Core.
+На него ссылаются Infrastructure-проекты модулей. `ForUpdate()` помечает запрос
+для блокировки строк PostgreSQL, а `ForUpdateInterceptor` добавляет SQL-клаузу
+при выполнении sync/async-запроса. Интерцептор регистрируется у каждого контекста:
+
+```csharp
+options.UseNpgsql(connectionString).AddInterceptors(new ForUpdateInterceptor());
+```
+
+Использование внутри явной транзакции:
+
+```csharp
+await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+var user = await db.Users.Where(user => user.Id == userId)
+    .AsNoTracking().ForUpdate().SingleOrDefaultAsync(cancellationToken);
+// Чтение и изменение связанных данных под блокировкой.
+await transaction.CommitAsync(cancellationToken);
+```
+
+Helper рассчитан на простые SELECT сущностей PostgreSQL. Не использовать с агрегатами,
+DISTINCT, GROUP BY, объединениями или split queries. Без зарегистрированного интерцептора
+TagWith остаётся только комментарием и блокировка не применяется.
+
 ## Данные и будущие процессы
 
 В Auth описаны модели и контекст EF Core. Контекст зарегистрирован в DI
