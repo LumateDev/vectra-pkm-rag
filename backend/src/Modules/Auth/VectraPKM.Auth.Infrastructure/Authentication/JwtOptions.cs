@@ -14,7 +14,7 @@ public sealed class JwtOptions
     /// <summary>Время жизни access-токена в минутах.</summary>
     public int AccessTokenLifetimeMinutes { get; set; } = 15;
 
-    /// <summary>Время жизни refresh-токена в днях. Будет использовано при реализации refresh.</summary>
+    /// <summary>Абсолютный срок жизни семейства refresh-токенов в днях с момента входа.</summary>
     public int RefreshTokenLifetimeDays { get; set; } = 30;
 
     /// <summary>Интервал очистки токенов в часах. Будет использован при реализации очистки.</summary>

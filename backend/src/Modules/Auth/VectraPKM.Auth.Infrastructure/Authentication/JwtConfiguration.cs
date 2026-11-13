@@ -14,6 +14,8 @@ internal static class JwtConfiguration
     {
         var options = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
         options.Validate();
+        services.AddSingleton(options);
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

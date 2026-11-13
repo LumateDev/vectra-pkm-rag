@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -12,6 +15,7 @@ using VectraPKM.Auth.Api.Controllers;
 using VectraPKM.Auth.Application;
 using VectraPKM.Auth.Application.Abstractions;
 using VectraPKM.Auth.Infrastructure.Identity;
+using VectraPKM.Auth.Infrastructure.Persistence;
 using VectraPKM.Shared.Api.Contracts;
 using Xunit;
 
@@ -20,7 +24,7 @@ namespace VectraPKM.Auth.Tests;
 /// <summary>Проверки входа через контроллер, прикладной сервис и настоящий UserManager.</summary>
 public sealed class AuthenticationTests
 {
-    /// <summary>Вход по email или username без учёта регистра сохраняет пробелы пароля и возвращает 200 с подписанным JWT и данными пользователя.</summary>
+    /// <summary>Вход возвращает JWT и защищённую refresh-cookie; в БД сохраняется только хеш refresh с тем же sid.</summary>
     /// <param name="login">Email или имя существующего пользователя в другом регистре.</param>
     [Theory(DisplayName = "Авторизация: верный пароль возвращает JWT")]
     [InlineData("ALEX@example.com")]
@@ -55,7 +59,21 @@ public sealed class AuthenticationTests
         Assert.Equal(data.ExpiresAt.UtcDateTime, jwt.ValidTo);
         Assert.Equal(TimeSpan.FromMinutes(15), jwt.ValidTo - jwt.ValidFrom);
         Assert.Equal("no-store", controller.Response.Headers.CacheControl.ToString());
-        Assert.False(controller.Response.Headers.ContainsKey("Set-Cookie"));
+        var cookie = SetCookieHeaderValue.Parse(controller.Response.Headers.SetCookie.ToString());
+        Assert.Equal("refreshToken", cookie.Name.ToString());
+        Assert.True(cookie.HttpOnly);
+        Assert.True(cookie.Secure);
+        Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Strict, cookie.SameSite);
+        Assert.Equal("/auth", cookie.Path.ToString());
+        var rawRefresh = cookie.Value.ToString();
+        Assert.Equal(64, Base64UrlEncoder.DecodeBytes(rawRefresh).Length);
+        var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+        var stored = Assert.Single(await context.RefreshTokens.AsNoTracking().ToListAsync());
+        Assert.Equal(sessionId, stored.SessionId);
+        Assert.Equal(data.User.Id, stored.UserId);
+        Assert.Equal(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawRefresh))), stored.TokenHash);
+        Assert.NotEqual(rawRefresh, stored.TokenHash);
+        Assert.Equal(TimeSpan.FromDays(30), stored.ExpiresAt - stored.CreatedAt);
     }
 
     /// <summary>Два успешных входа одного пользователя создают разные sid и разные идентификаторы access-токенов.</summary>
@@ -217,7 +235,7 @@ public sealed class AuthenticationTests
     /// <summary>Создаёт контроллер с настоящими сервисами и регистрирует пользователя для проверки входа.</summary>
     private static async Task<AuthController> CreateRegisteredController(IServiceProvider services)
     {
-        var auth = new AuthService(services.GetRequiredService<IUserRegistration>(), services.GetRequiredService<IUserAuthentication>(), services.GetRequiredService<IAccessTokenIssuer>());
+        var auth = new AuthService(services.GetRequiredService<IUserRegistration>(), services.GetRequiredService<IUserAuthentication>(), services.GetRequiredService<IAccessTokenIssuer>(), services.GetRequiredService<IRefreshTokenService>());
         var controller = new AuthController(auth)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }

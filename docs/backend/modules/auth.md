@@ -82,7 +82,7 @@ HTTP-контракты находятся в Api; между слоями ис�
 
 ## Авторизация
 
-`POST /auth` (метод контроллера `Auth`) принимает `login` и `password`.
+`POST /auth/login` (метод контроллера `Auth`) принимает `login` и `password`.
 `login` содержит username или email. Значение с `@` ищется по email, остальные —
 по username: символ `@` запрещён в username правилами регистрации.
 Оба варианта ищутся без учёта регистра средствами Identity; пароль проверяется без
@@ -105,8 +105,9 @@ HTTP-контракты находятся в Api; между слоями ис�
 
 `accessToken` — JWT с подписью HS256 и сроком из Jwt:AccessTokenLifetimeMinutes (по умолчанию 15 минут). Claims: `sub` (ID пользователя),
 `sid` (ID сессии), `jti`, `iat`, `nbf`, `iss`, `aud`, `exp`. Email и username возвращаются только в `user`.
-Каждый успешный вход получает новый `sid`. Пока ID присутствует только в JWT:
-сохранение сессий, cookie и refresh-токены ещё не реализованы.
+Каждый успешный вход получает новый `sid` и семейство refresh-токенов в существующей
+таблице `RefreshTokens`. Исходный refresh передаётся только через HttpOnly-cookie,
+в JSON его нет, а в БД сохраняется только SHA-256-хеш.
 SPA хранит access-токен в памяти и передаёт `Authorization: Bearer <JWT>` по HTTPS.
 API проверяет подпись, алгоритм HS256, issuer, audience и срок без ClockSkew.
 Общая политика требует авторизованного пользователя; вход и регистрация помечены AllowAnonymous.
@@ -119,7 +120,7 @@ API проверяет подпись, алгоритм HS256, issuer, audience 
 После проверки пароля `AuthService` выпускает токен через `IAccessTokenIssuer`;
 реализация `JwtAccessTokenIssuer` находится в Infrastructure.
 Прикладные контракты — `AuthenticationData`, `AuthenticationResult` (проверенный пользователь),
-`SignInResult` (пользователь и токен), `AccessToken` (значение и срок),
+`SignInResult` (пользователь и пара токенов), `IssuedAccessToken` и `IssuedRefreshToken` (значение и срок),
 ожидаемый отказ — `AuthUnauthorizedException`.
 
 Тесты `AuthenticationTests` проверяют успешный вход по username и email, JWT и его claims,
@@ -129,3 +130,30 @@ API проверяет подпись, алгоритм HS256, issuer, audience 
 Контроллер вызывается напрямую, без HTTP-хоста и PostgreSQL.
 
 JWT challenge и запрет доступа возвращают ApiResult с нейтральными сообщениями 401/403.
+
+## Refresh и logout
+
+- `POST /auth/login` сохраняет refresh и устанавливает cookie `refreshToken`.
+- `POST /auth/refresh` читает cookie, помечает её токен использованным и выдаёт новую пару.
+  Ответ — тот же `ApiResult<AuthResponse>`, что при входе. `sid` и абсолютный срок
+  refresh-сессии сохраняются. Неизвестный, истёкший или отозванный токен даёт 401
+  с очисткой cookie. Повтор использованного токена отзывает всё семейство до возврата 401.
+- `POST /auth/logout` доступен без JWT, отзывает семейство по cookie и удаляет её.
+  Возвращает `200` с `ApiResult<bool>(true)` даже при отсутствующей или неизвестной cookie.
+  Можно передать ранее ротированный токен: будет отозвано всё его семейство.
+
+Cookie: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/auth`, без Domain.
+Срок задаётся `Jwt:RefreshTokenLifetimeDays` с момента входа; ротация его не продлевает.
+Cookie устанавливается и удаляется с одинаковыми атрибутами. Локальная проверка — по HTTPS.
+
+Обновление и отзыв выполняются транзакционно. `SELECT FOR UPDATE` блокирует строку
+пользователя в `AspNetUsers`; после блокировки refresh перечитывается. Это согласует
+операции всех сессий пользователя между процессами без новой таблицы сессий.
+Блокировка задаётся через общий `ForUpdate()` и зарегистрированный интерцептор.
+Первый запрос refresh выбирает только Id/UserId/SessionId. После блокировки второй
+запрос читает актуальную сущность через AsNoTracking без дополнительного ReloadAsync.
+Отметка использования сохраняется ExecuteUpdateAsync, новый refresh — SaveChangesAsync;
+обе операции входят в одну транзакцию. Результаты bulk update не синхронизируют Change Tracker.
+Использованные записи сохраняются для reuse detection. Фоновая очистка пока не подключена.
+Выданный JWT после logout/reuse действует до exp: сервер не проверяет отзыв сессии на каждом запросе.
+

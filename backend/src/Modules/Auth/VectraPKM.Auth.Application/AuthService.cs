@@ -11,16 +11,18 @@ public sealed class AuthService : IAuthService
     private readonly IUserRegistration _userRegistration;
     private readonly IUserAuthentication _userAuthentication;
     private readonly IAccessTokenIssuer _accessTokenIssuer;
+    private readonly IRefreshTokenService _refreshTokens;
 
     /// <summary>
     /// Создаёт сервис с инфраструктурными реализациями регистрации и проверки учётных данных.
     /// </summary>
     public AuthService(IUserRegistration userRegistration, IUserAuthentication userAuthentication,
-        IAccessTokenIssuer accessTokenIssuer)
+        IAccessTokenIssuer accessTokenIssuer, IRefreshTokenService refreshTokens)
     {
         _userRegistration = userRegistration;
         _userAuthentication = userAuthentication;
         _accessTokenIssuer = accessTokenIssuer;
+        _refreshTokens = refreshTokens;
     }
 
     /// <inheritdoc />
@@ -29,7 +31,9 @@ public sealed class AuthService : IAuthService
         ArgumentNullException.ThrowIfNull(data);
         var user = await _userAuthentication.AuthenticateAsync(data, cancellationToken);
         var sessionId = Guid.NewGuid();
-        return new SignInResult(user, _accessTokenIssuer.Issue(user.UserId, sessionId));
+        var accessToken = _accessTokenIssuer.Issue(user.UserId, sessionId);
+        var refreshToken = await _refreshTokens.CreateAsync(user.UserId, sessionId, cancellationToken);
+        return new SignInResult(user, accessToken, refreshToken);
     }
 
     /// <inheritdoc />
@@ -38,4 +42,16 @@ public sealed class AuthService : IAuthService
         ArgumentNullException.ThrowIfNull(data);
         return _userRegistration.RegisterAsync(data, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<SignInResult> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
+    {
+        var session = await _refreshTokens.RotateAsync(refreshToken, cancellationToken);
+        var rotatedToken = _accessTokenIssuer.Issue(session.User.UserId, session.SessionId);
+        return new SignInResult(session.User, rotatedToken, session.RefreshToken);
+    }
+
+    /// <inheritdoc />
+    public Task LogoutAsync(string? refreshToken, CancellationToken cancellationToken = default)
+        => _refreshTokens.RevokeAsync(refreshToken, cancellationToken);
 }

@@ -16,6 +16,7 @@ namespace VectraPKM.Auth.Api.Controllers;
 [Route("auth")]
 public sealed class AuthController : ControllerBase
 {
+    private const string RefreshCookieName = "refreshToken";
     private readonly IAuthService _authService;
 
     /// <summary>Создаёт контроллер с прикладным сервисом Auth.</summary>
@@ -29,7 +30,7 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Имя пользователя или email и пароль пользователя.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    [HttpPost]
+    [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status400BadRequest)]
@@ -45,6 +46,7 @@ public sealed class AuthController : ControllerBase
             var result = await _authService.AuthAsync(new AuthenticationData(request.Login, request.Password), cancellationToken);
             var userData = new AuthUserResponse(result.User.UserId, result.User.Email, result.User.UserName);
             var response = new AuthResponse(result.Token.Value, result.Token.ExpiresAt, userData);
+            SetRefreshTokenCookie(result.RefreshToken);
             return Ok(new ApiResult<AuthResponse>(response));
         }
         catch (AuthUnauthorizedException exception)
@@ -86,4 +88,67 @@ public sealed class AuthController : ControllerBase
             return Conflict(new ApiResult<RegisterResponse>(error: exception.Message));
         }
     }
+
+    /// <summary>Обновляет access и refresh по HttpOnly-cookie без продления абсолютного срока сессии.</summary>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResult<AuthResponse>>> Refresh(CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = "no-store";
+        try
+        {
+            if (!Request.Cookies.TryGetValue(RefreshCookieName, out var refreshToken))
+                throw new AuthInvalidRefreshTokenException();
+
+            var result = await _authService.RefreshAsync(refreshToken, cancellationToken);
+            var user = new AuthUserResponse(result.User.UserId, result.User.Email, result.User.UserName);
+            var response = new AuthResponse(result.Token.Value, result.Token.ExpiresAt, user);
+            SetRefreshTokenCookie(result.RefreshToken);
+            return Ok(new ApiResult<AuthResponse>(response));
+        }
+        catch (AuthInvalidRefreshTokenException exception)
+        {
+            ClearRefreshTokenCookie();
+            return Unauthorized(new ApiResult<AuthResponse>(error: exception.Message));
+        }
+    }
+
+    /// <summary>Отзывает refresh-токены текущей сессии и удаляет cookie. Access действует до exp.</summary>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType<ApiResult<bool>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResult<bool>>> Logout(CancellationToken cancellationToken)
+    {
+        Response.Headers.CacheControl = "no-store";
+        Request.Cookies.TryGetValue(RefreshCookieName, out var refreshToken);
+        await _authService.LogoutAsync(refreshToken, cancellationToken);
+        ClearRefreshTokenCookie();
+        return Ok(new ApiResult<bool>(true));
+    }
+
+    
+
+    private static CookieOptions CreateRefreshCookieOptions() => new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict,
+        Path = "/auth"
+    };
+
+    private void SetRefreshTokenCookie(IssuedRefreshToken refreshToken)
+    {
+        var options = CreateRefreshCookieOptions();
+        options.Expires = refreshToken.ExpiresAt;
+        options.MaxAge = refreshToken.ExpiresAt - DateTimeOffset.UtcNow;
+        Response.Cookies.Append(RefreshCookieName, refreshToken.Value, options);
+    }
+
+
+    private void ClearRefreshTokenCookie()
+    => Response.Cookies.Delete(RefreshCookieName, CreateRefreshCookieOptions());
 }

@@ -45,4 +45,35 @@ public sealed class RefreshToken
     /// Время отзыва токена в UTC.
     /// </summary>
     public DateTimeOffset? RevokedAt { get; private set; }
+
+    private RefreshToken() { }
+
+    /// <summary>
+    /// Создаёт запись хеша токена для сессии с фиксированным сроком окончания.
+    /// </summary>
+    public RefreshToken(Guid userId, Guid sessionId, string tokenHash, DateTimeOffset createdAt, DateTimeOffset expiresAt)
+    {
+        if (userId == Guid.Empty || sessionId == Guid.Empty)
+            throw new ArgumentException("Идентификаторы пользователя и сессии не должны быть пустыми.");
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
+        if (expiresAt <= createdAt)
+            throw new ArgumentException("Срок действия должен заканчиваться после создания токена.");
+
+        Id = Guid.NewGuid();
+        UserId = userId;
+        SessionId = sessionId;
+        TokenHash = tokenHash;
+        CreatedAt = createdAt;
+        ExpiresAt = expiresAt;
+    }
+
+    /// <summary>
+    /// Помечает действующий токен использованным для ротации.
+    /// </summary>
+    public void MarkRefreshed(DateTimeOffset now)
+    {
+        if (RevokedAt is not null || RefreshedAt is not null || ExpiresAt <= now)
+            throw new InvalidOperationException("Токен нельзя использовать для обновления.");
+        RefreshedAt = now;
+    }
 }

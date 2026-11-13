@@ -114,7 +114,7 @@ public sealed class RegistrationTests
     private static AuthController CreateController(IServiceProvider services)
     {
         var auth = new AuthService(services.GetRequiredService<IUserRegistration>(),
-            services.GetRequiredService<IUserAuthentication>(), services.GetRequiredService<IAccessTokenIssuer>());
+            services.GetRequiredService<IUserAuthentication>(), services.GetRequiredService<IAccessTokenIssuer>(), services.GetRequiredService<IRefreshTokenService>());
         return new AuthController(auth)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
