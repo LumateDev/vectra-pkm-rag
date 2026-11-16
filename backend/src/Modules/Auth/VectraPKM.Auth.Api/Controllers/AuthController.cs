@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using VectraPKM.Auth.Api.Extensions;
 using VectraPKM.Auth.Api.Contracts;
 using VectraPKM.Auth.Application;
 using VectraPKM.Auth.Application.Contracts;
@@ -14,6 +16,7 @@ namespace VectraPKM.Auth.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("auth")]
+[ProducesResponseType<ApiResult<object>>(StatusCodes.Status429TooManyRequests)]
 public sealed class AuthController : ControllerBase
 {
     private const string RefreshCookieName = "refreshToken";
@@ -30,8 +33,9 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Имя пользователя или email и пароль пользователя.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    [HttpPost("login")]
     [AllowAnonymous]
+    [HttpPost("login")]
+    [EnableRateLimiting(AuthRateLimitingExtensions.LoginPolicy)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status401Unauthorized)]
@@ -60,8 +64,9 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <param name="request">Email, имя пользователя и пароль.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    [HttpPost("register")]
     [AllowAnonymous]
+    [HttpPost("register")]
+    [EnableRateLimiting(AuthRateLimitingExtensions.RegisterPolicy)]
     [ProducesResponseType<ApiResult<RegisterResponse>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ApiResult<RegisterResponse>>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiResult<RegisterResponse>>(StatusCodes.Status409Conflict)]
@@ -91,8 +96,9 @@ public sealed class AuthController : ControllerBase
 
     /// <summary>Обновляет access и refresh по HttpOnly-cookie без продления абсолютного срока сессии.</summary>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    [HttpPost("refresh")]
     [AllowAnonymous]
+    [HttpPost("refresh")]
+    [EnableRateLimiting(AuthRateLimitingExtensions.RefreshPolicy)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiResult<AuthResponse>>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResult<AuthResponse>>> Refresh(CancellationToken cancellationToken)
@@ -118,8 +124,9 @@ public sealed class AuthController : ControllerBase
 
     /// <summary>Отзывает refresh-токены текущей сессии и удаляет cookie. Access действует до exp.</summary>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    [HttpPost("logout")]
     [AllowAnonymous]
+    [HttpPost("logout")]
+    [EnableRateLimiting(AuthRateLimitingExtensions.LogoutPolicy)]
     [ProducesResponseType<ApiResult<bool>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResult<bool>>> Logout(CancellationToken cancellationToken)
     {

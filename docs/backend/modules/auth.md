@@ -131,6 +131,22 @@ API проверяет подпись, алгоритм HS256, issuer, audience 
 
 JWT challenge и запрет доступа возвращают ApiResult с нейтральными сообщениями 401/403.
 
+## Ограничение частоты запросов
+
+Для каждого IP действуют независимые фиксированные окна:
+
+| Endpoint | Запросы | Окно |
+| --- | --- | --- |
+| POST /auth/login | 10 | 60 секунд |
+| POST /auth/register | 5 | 600 секунд |
+| POST /auth/refresh | 10 | 60 секунд |
+| POST /auth/logout | 5 | 60 секунд |
+
+Настройки: секция `AuthRateLimiting` в appsettings.json, для каждого endpoint —
+`PermitLimit` и `WindowSeconds`. Значения проверяются при регистрации сервисов;
+после изменения требуется перезапуск. Запросы сверх лимита не ставятся в очередь:
+возвращаются 429, ApiResult с сообщением и Retry-After в секундах. Cookie не удаляется.
+Учитываются все запросы к endpoint, включая неуспешные.
 ## Refresh и logout
 
 - `POST /auth/login` сохраняет refresh и устанавливает cookie `refreshToken`.

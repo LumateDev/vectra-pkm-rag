@@ -26,6 +26,7 @@ public static class AuthModule
         services.AddScoped<IAuthService, AuthService>();
         services.AddControllers().AddApplicationPart(typeof(AuthController).Assembly);
         services.AddJwtBearerApiResponses();
+        services.AddAuthRateLimiting(configuration);
 
         return services;
     }
