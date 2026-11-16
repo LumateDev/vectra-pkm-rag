@@ -5,15 +5,14 @@
 ```powershell
 cd backend
 dotnet build VectraPKM.slnx
-dotnet run --project src/VectraPKM.Api --launch-profile http
+dotnet run --project src/VectraPKM.Api --launch-profile Kestrel
 ```
 
-В Visual Studio запускай только `VectraPKM.Api`.
+В Visual Studio запускай `VectraPKM.Api` с профилем `Kestrel` (прямой запуск, без IIS Express).
 
-- HTTP: http://localhost:5000
-- HTTPS в профиле https: https://localhost:7000 (HTTP 5000 тоже включён).
-- Swagger UI: http://localhost:5000/swagger
-- OpenAPI: http://localhost:5000/swagger/v1/swagger.json
+- HTTPS: https://127.0.0.1:7000
+- Swagger UI: https://127.0.0.1:7000/swagger
+- OpenAPI: https://127.0.0.1:7000/swagger/v1/swagger.json
 
 Swagger включён только в Development. В нём доступен `POST /auth/register`.
 Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
@@ -23,17 +22,19 @@ Swagger включён только в Development. В нём доступен `
 
 ## Конфигурация
 
-Конфигурация находится в хосте `src/VectraPKM.Api`. Все три файла хранятся в Git:
+Конфигурация находится в хосте `src/VectraPKM.Api`:
 
 - `appsettings.json` — общие настройки логирования, AllowedHosts и ключ ConnectionStrings:Auth.
-- `appsettings.Development.json` — переопределение формата логов для разработки.
-- `appsettings.Production.json` — пока пустой файл для будущих production-настроек.
+- `appsettings.Development.json` — локальная копия общего файла с переопределениями для разработки:
+  читаемая текстовая консоль Serilog и Kestrel на `https://127.0.0.1:7000`.
+- `appsettings.Production.json` — при необходимости локальный конфиг production.
+
 
 .NET загружает общий файл и файл текущего окружения; окруженческие значения
 переопределяют общие. Production не загружает Development.
 Example-файлов и User Secrets нет. Development исключён из публикации.
 
-`Properties/launchSettings.json` задаёт локальные профили и окружение Development.
+`Properties/launchSettings.json` задаёт профиль Kestrel и окружение Development.
 Release/Debug — конфигурация сборки, она не выбирает окружение приложения.
 
 ### Настройки JWT
