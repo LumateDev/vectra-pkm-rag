@@ -4,6 +4,10 @@ node_modules
 
 # .env files
 .env*
+!.env.example
+
+# Orval
+/src/api/generated/
 
 # Quasar core related directories
 .quasar

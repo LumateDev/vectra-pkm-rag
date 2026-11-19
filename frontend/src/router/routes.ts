@@ -6,8 +6,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../layouts/AuthLayout.vue'),
     children: [
       { path: '', redirect: { name: 'login' } },
-      { path: 'login', name: 'login', component: () => import('../pages/AuthPage.vue') },
-      { path: 'register', name: 'register', component: () => import('../pages/AuthPage.vue') },
+      {
+        path: 'login',
+        name: 'login',
+        component: () => import('../pages/AuthPage.vue'),
+        meta: { guestOnly: true },
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: () => import('../pages/AuthPage.vue'),
+        meta: { guestOnly: true },
+      },
+      {
+        path: 'projects',
+        name: 'projects',
+        component: () => import('../pages/ProjectsPage.vue'),
+        meta: { requiresAuth: true },
+      },
       { path: ':catchAll(.*)*', component: () => import('../pages/ErrorNotFound.vue') },
     ],
   },

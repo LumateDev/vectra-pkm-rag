@@ -1,7 +1,9 @@
 import { defineConfig } from '#q-app';
 
+const apiProxyTarget = new URL(import.meta.env.API_PROXY_TARGET || 'https://127.0.0.1:7000');
+
 export default defineConfig(() => ({
-  boot: ['theme'],
+  boot: ['theme', 'api'],
   css: ['app.scss'],
   extras: ['material-icons'],
   build: {
@@ -21,9 +23,23 @@ export default defineConfig(() => ({
       ],
     ],
   },
-  devServer: { open: false, port: 9000 },
+  devServer: {
+    open: false,
+    host: '127.0.0.1',
+    port: 9000,
+    strictPort: true,
+    https: true,
+    proxy: {
+      '/auth/': {
+        target: apiProxyTarget.href,
+        changeOrigin: true,
+        // Kestrel использует локальный сертификат разработки.
+        secure: apiProxyTarget.hostname !== '127.0.0.1',
+      },
+    },
+  },
   framework: {
     lang: 'ru',
-    plugins: ['Meta'],
+    plugins: ['Meta', 'Notify'],
   },
 }));

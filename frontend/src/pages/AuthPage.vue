@@ -15,19 +15,34 @@
         >Регистрация</router-link
       >
     </nav>
-    <q-form ref="form" class="auth-form" @submit="onSubmit" @validation-error="submitted = false">
+    <q-form ref="form" class="auth-form" @submit="onSubmit" @validation-error="error = ''">
       <q-input
-        v-model.trim="email"
+        v-model.trim="login"
         outlined
-        label="Email"
-        type="email"
-        autocomplete="email"
-        name="email"
-        :rules="[emailRule]"
+        :label="isRegister ? 'Email' : 'Email или имя пользователя'"
+        :type="isRegister ? 'email' : 'text'"
+        :autocomplete="isRegister ? 'email' : 'username'"
+        :name="isRegister ? 'email' : 'login'"
+        :rules="isRegister ? [emailRule] : [requiredRule]"
         lazy-rules
         hide-bottom-space
-        maxlength="254"
-        @update:model-value="submitted = false"
+        maxlength="256"
+        :disable="pending"
+        @update:model-value="error = ''"
+      />
+      <q-input
+        v-if="isRegister"
+        v-model.trim="userName"
+        outlined
+        label="Имя пользователя"
+        autocomplete="username"
+        name="username"
+        :rules="[userNameRule]"
+        lazy-rules
+        hide-bottom-space
+        maxlength="32"
+        :disable="pending"
+        @update:model-value="error = ''"
       />
       <q-input
         v-model="password"
@@ -40,7 +55,9 @@
         :hint="isRegister ? 'От 8 до 128 символов' : undefined"
         lazy-rules
         hide-bottom-space
-        @update:model-value="submitted = false"
+        maxlength="128"
+        :disable="pending"
+        @update:model-value="error = ''"
       >
         <template #append>
           <q-btn
@@ -67,7 +84,9 @@
         lazy-rules
         hide-bottom-space
         reactive-rules
-        @update:model-value="submitted = false"
+        maxlength="128"
+        :disable="pending"
+        @update:model-value="error = ''"
       />
       <q-btn
         class="auth-submit"
@@ -76,12 +95,10 @@
         no-caps
         type="submit"
         :label="isRegister ? 'Создать аккаунт' : 'Войти'"
-        icon-right="arrow_forward"
+        :loading="pending"
       />
-      <q-banner v-if="submitted" class="auth-notice" rounded role="status">
-        Данные проверены.
-        {{ isRegister ? 'Регистрация станет доступна' : 'Вход станет доступен' }} после подключения
-        сервера.
+      <q-banner v-if="error" class="auth-error" rounded role="alert">
+        {{ error }}
       </q-banner>
     </q-form>
     <p class="auth-switch">
@@ -94,33 +111,81 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMeta } from 'quasar';
 import type { QForm } from 'quasar';
-import { useRoute } from 'vue-router';
-import { emailRule, passwordRule, requiredRule } from '../utils/validation';
+import { useRoute, useRouter } from 'vue-router';
+import { getApiErrorMessage } from '../api/axios-instance';
+import { useAuthStore } from '../stores/auth';
+import { emailRule, passwordRule, requiredRule, userNameRule } from '../utils/validation';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const isRegister = computed(() => route.name === 'register');
 const form = ref<QForm>();
-const email = ref('');
+const login = ref('');
+const userName = ref('');
 const password = ref('');
 const confirmation = ref('');
 const showPassword = ref(false);
-const submitted = ref(false);
+const error = ref('');
+const pending = ref(false);
+let activeRequest: AbortController | undefined;
 
 useMeta(() => ({ title: `${isRegister.value ? 'Регистрация' : 'Вход'} · VectraPKM` }));
 
 watch(isRegister, () => {
+  cancelRequest();
+  userName.value = '';
   password.value = '';
   confirmation.value = '';
   showPassword.value = false;
-  submitted.value = false;
+  error.value = '';
   form.value?.resetValidation();
 });
 
-function onSubmit() {
-  submitted.value = true;
+onBeforeUnmount(cancelRequest);
+
+function cancelRequest() {
+  activeRequest?.abort();
+  activeRequest = undefined;
+  pending.value = false;
+}
+
+async function onSubmit() {
+  if (pending.value) return;
+
+  const controller = new AbortController();
+  activeRequest = controller;
+  pending.value = true;
+  error.value = '';
+
+  try {
+    if (isRegister.value) {
+      await authStore.register(
+        { email: login.value, userName: userName.value, password: password.value },
+        controller.signal,
+      );
+      if (!controller.signal.aborted) {
+        await router.replace({ name: 'login' });
+      }
+    } else {
+      await authStore.login({ login: login.value, password: password.value }, controller.signal);
+      if (!controller.signal.aborted) {
+        await router.replace({ name: 'projects' });
+      }
+    }
+  } catch (cause) {
+    if (!controller.signal.aborted) {
+      error.value = getApiErrorMessage(cause);
+    }
+  } finally {
+    if (activeRequest === controller) {
+      activeRequest = undefined;
+      pending.value = false;
+    }
+  }
 }
 </script>
 
@@ -229,13 +294,9 @@ h1 {
   color: theme.token('app-on-primary');
 }
 
-.auth-submit :deep(.q-icon) {
-  font-size: 1.125rem;
-}
-
-.auth-notice {
-  background: theme.token('app-notice');
-  color: theme.token('app-link');
+.auth-error {
+  background: theme.token('app-surface-soft');
+  color: theme.token('app-negative');
   font-size: 0.8125rem;
   line-height: 1.6;
 }

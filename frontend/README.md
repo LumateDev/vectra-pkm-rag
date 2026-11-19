@@ -2,15 +2,19 @@
 
 Обязательные правила для разработки и агентов: [AGENTS.md](AGENTS.md).
 
-Vue 3, TypeScript, Quasar CLI (Vite), Vue Router. Требуется Node.js 22.12+ или 24 LTS.
+Требуется Node.js 22.19+ или 24 LTS.
+
+Запустите API с профилем Kestrel по [инструкции backend](../docs/backend/development.md).
 
 ```powershell
 cd frontend
 npm ci
+Copy-Item .env.example .env
+npm run api:generate
 npm run dev
 ```
 
-Приложение: http://localhost:9000. Маршруты: `/login`, `/register`, `/` перенаправляет на вход. Неизвестный адрес показывает 404.
+SPA доступна на `https://127.0.0.1:9000`. Повторяйте `npm run api:generate` после изменений OpenAPI.
 
 ```powershell
 npm run typecheck
@@ -20,16 +24,6 @@ npm run build
 
 `npm run format` форматирует исходники. Сборка создаётся в `dist/spa/`.
 При размещении на сервере настройте fallback на `index.html` для маршрутов Vue Router (history mode).
-
-- `src/layouts/AuthLayout.vue` — общая оболочка.
-- `src/pages/AuthPage.vue` — формы входа и регистрации.
-- `src/utils/validation.ts` — правила проверки ввода.
-- `src/css/app.scss` — подключение тем и базовые стили; оформление компонентов находится в их scoped SCSS.
-- `quasar.config.ts` — Quasar CLI и локализация.
-
-Формы пока проверяют ввод локально и показывают уведомление о будущем подключении сервера. API аутентификации в backend ещё не реализован. Запросы не отправляются, пароли не сохраняются. Политика регистрации соответствует backend: 8–128 символов без дополнительных требований к составу пароля.
-
-Светлая и тёмная темы используют Quasar Dark и общие CSS-переменные. По умолчанию тема системная, ручной выбор сохраняется в localStorage (vectra.theme). Временный переключатель — компонент ThemeToggle в шапке AuthLayout; инициализация темы находится в src/boot/theme.ts.
 
 ## Стили и темы
 
