@@ -20,4 +20,15 @@ public sealed class ProjectService(IProjectStore store)
     /// <summary>Возвращает проект указанного владельца, если он существует.</summary>
     public Task<Project?> GetAsync(Guid id, Guid ownerId, CancellationToken cancellationToken)
         => store.FindByOwnerAsync(id, ownerId, cancellationToken);
+
+    /// <summary>Переименовывает проект указанного владельца, если он существует.</summary>
+    public async Task<Project?> RenameAsync(Guid id, Guid ownerId, string name, CancellationToken cancellationToken)
+    {
+        var project = await store.FindByOwnerAsync(id, ownerId, cancellationToken);
+        if (project is null)
+            return null;
+
+        project.Rename(name, DateTimeOffset.UtcNow);
+        return await store.SaveNameAsync(project, cancellationToken) ? project : null;
+    }
 }

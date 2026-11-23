@@ -25,4 +25,15 @@ internal sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
         => db.Projects.AsNoTracking().SingleOrDefaultAsync(
             project => project.Id == id && project.OwnerId == ownerId,
             cancellationToken);
+
+    public async Task<bool> SaveNameAsync(Project project, CancellationToken cancellationToken)
+    {
+        var updated = await db.Projects
+            .Where(item => item.Id == project.Id && item.OwnerId == project.OwnerId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(item => item.Name, project.Name)
+                .SetProperty(item => item.UpdatedAt, project.UpdatedAt),
+                cancellationToken);
+        return updated == 1;
+    }
 }

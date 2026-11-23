@@ -13,4 +13,7 @@ public interface IProjectStore
 
     /// <summary>Находит проект по идентификатору и владельцу.</summary>
     Task<Project?> FindByOwnerAsync(Guid id, Guid ownerId, CancellationToken cancellationToken);
+
+    /// <summary>Сохраняет новое название и время изменения проекта указанного владельца.</summary>
+    Task<bool> SaveNameAsync(Project project, CancellationToken cancellationToken);
 }

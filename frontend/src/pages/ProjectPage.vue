@@ -8,9 +8,43 @@
       no-caps
       class="back-link"
     />
-    <h1 id="project-title">{{ project?.name ?? 'Проект' }}</h1>
+    <header class="project-header">
+      <h1 id="project-title">{{ project?.name ?? 'Проект' }}</h1>
+      <q-btn
+        v-if="project && !isEditing"
+        label="Переименовать"
+        icon="edit"
+        flat
+        no-caps
+        @click="startRename"
+      />
+    </header>
     <p v-if="isLoading" role="status">Загружаем проект…</p>
     <p v-else-if="error" class="project-error" role="alert">{{ error }}</p>
+
+    <q-form v-if="isEditing" class="rename-form" @submit="renameProject">
+      <q-input
+        v-model="newName"
+        outlined
+        autofocus
+        label="Название проекта"
+        :disable="isSaving"
+        @update:model-value="renameError = ''"
+      />
+      <div class="rename-actions">
+        <q-btn label="Отмена" flat no-caps :disable="isSaving" @click="isEditing = false" />
+        <q-btn
+          type="submit"
+          label="Сохранить"
+          color="primary"
+          unelevated
+          no-caps
+          :loading="isSaving"
+          :disable="!newName.trim() || newName.trim() === project?.name"
+        />
+      </div>
+      <p v-if="renameError" class="project-error" role="alert">{{ renameError }}</p>
+    </q-form>
   </section>
 </template>
 
@@ -27,6 +61,11 @@ const api = getProjects();
 const project = ref<ProjectResponse>();
 const isLoading = ref(true);
 const error = ref('');
+const isEditing = ref(false);
+const isSaving = ref(false);
+const newName = ref('');
+const renameError = ref('');
+let projectRequest: AbortController | undefined;
 
 useMeta(() => ({ title: `${project.value?.name ?? 'Проект'} · VectraPKM` }));
 
@@ -34,10 +73,13 @@ watch(
   () => props.id,
   async (id, _, onCleanup) => {
     const request = new AbortController();
+    projectRequest = request;
     onCleanup(() => request.abort());
     project.value = undefined;
     isLoading.value = true;
     error.value = '';
+    isEditing.value = false;
+    isSaving.value = false;
 
     try {
       const response = await api.getProject(id, { signal: request.signal });
@@ -58,6 +100,39 @@ watch(
   },
   { immediate: true },
 );
+
+function startRename() {
+  if (!project.value) return;
+  newName.value = project.value.name;
+  renameError.value = '';
+  isEditing.value = true;
+}
+
+async function renameProject() {
+  const currentProject = project.value;
+  const name = newName.value.trim();
+  const signal = projectRequest?.signal;
+  if (!currentProject || !signal || !name || name === currentProject.name || isSaving.value) {
+    return;
+  }
+
+  isSaving.value = true;
+  renameError.value = '';
+  try {
+    const response = await api.renameProject(currentProject.id, { name }, { signal });
+    if (signal.aborted) return;
+    if (response.error || !response.data) {
+      throw new Error(response.error || 'Не удалось переименовать проект.');
+    }
+
+    project.value = response.data;
+    isEditing.value = false;
+  } catch (cause) {
+    if (!signal.aborted) renameError.value = getApiErrorMessage(cause);
+  } finally {
+    if (!signal.aborted) isSaving.value = false;
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -75,6 +150,34 @@ watch(
   color: theme.token('app-link');
 }
 
+.project-header,
+.rename-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.project-header {
+  justify-content: space-between;
+}
+
+.rename-form {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 33rem);
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid theme.token('app-border');
+  border-radius: 1rem;
+  background: theme.token('app-surface');
+  box-shadow: theme.token('app-card-shadow');
+}
+
+.rename-actions {
+  justify-content: flex-end;
+}
+
 h1 {
   margin: 0;
   font-size: clamp(1.875rem, 5vw, 2.5rem);
@@ -84,5 +187,9 @@ h1 {
 
 .project-error {
   color: theme.token('app-negative');
+}
+
+.rename-form .project-error {
+  margin: 0;
 }
 </style>

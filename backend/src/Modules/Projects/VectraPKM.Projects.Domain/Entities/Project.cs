@@ -25,12 +25,25 @@ public sealed class Project
     public Project(Guid ownerId, string name, DateTimeOffset createdAt)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(ownerId, Guid.Empty);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
         Id = Guid.NewGuid();
         OwnerId = ownerId;
-        Name = name.Trim();
+        Name = NormalizeName(name);
         CreatedAt = createdAt.ToUniversalTime();
         UpdatedAt = CreatedAt;
+    }
+
+    /// <summary>Обновляет название проекта и время его изменения.</summary>
+    /// <param name="name">Новое название проекта.</param>
+    /// <param name="updatedAt">Время изменения.</param>
+    public void Rename(string name, DateTimeOffset updatedAt)
+    {
+        Name = NormalizeName(name);
+        UpdatedAt = updatedAt.ToUniversalTime();
+    }
+
+    private static string NormalizeName(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return name.Trim();
     }
 }

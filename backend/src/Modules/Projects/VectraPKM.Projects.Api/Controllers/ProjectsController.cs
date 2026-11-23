@@ -66,6 +66,30 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
         return Ok(new ApiResult<ProjectResponse>(ToResponse(project)));
     }
 
+    /// <summary>Переименовывает проект текущего пользователя.</summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <param name="request">Новое название проекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpPatch("{id:guid}", Name = "renameProject")]
+    [ProducesResponseType<ApiResult<ProjectResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<ProjectResponse>>> Rename(
+        Guid id,
+        [FromBody] RenameProjectRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(out var ownerId))
+            return Challenge();
+
+        var project = await projectService.RenameAsync(id, ownerId, request.Name, cancellationToken);
+        if (project is null)
+            return NotFound(new ApiResult<object>(error: "Проект не найден."));
+
+        return Ok(new ApiResult<ProjectResponse>(ToResponse(project)));
+    }
+
     private bool TryGetOwnerId(out Guid ownerId)
         => Guid.TryParse(User.FindFirstValue("sub"), out ownerId) && ownerId != Guid.Empty;
 
