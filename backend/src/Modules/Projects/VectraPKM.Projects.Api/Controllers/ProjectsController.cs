@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VectraPKM.Projects.Api.Contracts;
+using VectraPKM.Projects.Api.Extensions;
 using VectraPKM.Projects.Application;
 using VectraPKM.Projects.Domain.Entities;
 using VectraPKM.Shared.Api.Contracts;
@@ -24,7 +24,7 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
         [FromBody] CreateProjectRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetOwnerId(out var ownerId))
+        if (!User.TryGetOwnerId(out var ownerId))
             return Challenge();
 
         var project = await projectService.CreateAsync(ownerId, request.Name, cancellationToken);
@@ -38,7 +38,7 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
     public async Task<ActionResult<ApiResult<IReadOnlyList<ProjectResponse>>>> List(
         CancellationToken cancellationToken)
     {
-        if (!TryGetOwnerId(out var ownerId))
+        if (!User.TryGetOwnerId(out var ownerId))
             return Challenge();
 
         var projects = await projectService.ListAsync(ownerId, cancellationToken);
@@ -56,7 +56,7 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!TryGetOwnerId(out var ownerId))
+        if (!User.TryGetOwnerId(out var ownerId))
             return Challenge();
 
         var project = await projectService.GetAsync(id, ownerId, cancellationToken);
@@ -80,7 +80,7 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
         [FromBody] RenameProjectRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetOwnerId(out var ownerId))
+        if (!User.TryGetOwnerId(out var ownerId))
             return Challenge();
 
         var project = await projectService.RenameAsync(id, ownerId, request.Name, cancellationToken);
@@ -89,9 +89,6 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
 
         return Ok(new ApiResult<ProjectResponse>(ToResponse(project)));
     }
-
-    private bool TryGetOwnerId(out Guid ownerId)
-        => Guid.TryParse(User.FindFirstValue("sub"), out ownerId) && ownerId != Guid.Empty;
 
     private static ProjectResponse ToResponse(Project project)
         => new(project.Id, project.Name, project.CreatedAt, project.UpdatedAt);

@@ -25,6 +25,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString,
                 postgres => postgres.MigrationsHistoryTable("__ProjectsMigrationsHistory")));
         services.AddScoped<IProjectStore, ProjectStore>();
+        services.AddScoped<INoteStore, NoteStore>();
         return services;
     }
 }

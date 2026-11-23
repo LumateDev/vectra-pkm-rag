@@ -16,6 +16,7 @@ public static class ProjectsModule
     {
         services.AddProjectsInfrastructure(configuration);
         services.AddScoped<ProjectService>();
+        services.AddScoped<NoteService>();
         services.AddControllers().AddApplicationPart(typeof(ProjectsController).Assembly);
         return services;
     }
