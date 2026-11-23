@@ -54,7 +54,7 @@ Email должен быть уникальным. Имя пользовател�
 
 ## Регистрация
 
-`POST /auth/register` принимает `email`, `userName` и `password`.
+`POST /api/auth/register` принимает `email`, `userName` и `password`.
 Успех — `201` с `ApiResult<RegisterResponse>`: данные `userId`, `email` и `userName`
 находятся в `data`, поле `error` равно null. Вход, cookie и выдача токенов не выполняются.
 Ошибки Identity, обработанные контроллером, возвращают `400`,
@@ -82,7 +82,7 @@ HTTP-контракты находятся в Api; между слоями ис�
 
 ## Авторизация
 
-`POST /auth/login` (метод контроллера `Auth`) принимает `login` и `password`.
+`POST /api/auth/login` (метод контроллера `Auth`) принимает `login` и `password`.
 `login` содержит username или email. Значение с `@` ищется по email, остальные —
 по username: символ `@` запрещён в username правилами регистрации.
 Оба варианта ищутся без учёта регистра средствами Identity; пароль проверяется без
@@ -137,10 +137,10 @@ JWT challenge и запрет доступа возвращают ApiResult с �
 
 | Endpoint | Запросы | Окно |
 | --- | --- | --- |
-| POST /auth/login | 10 | 60 секунд |
-| POST /auth/register | 5 | 600 секунд |
-| POST /auth/refresh | 10 | 60 секунд |
-| POST /auth/logout | 5 | 60 секунд |
+| POST /api/auth/login | 10 | 60 секунд |
+| POST /api/auth/register | 5 | 600 секунд |
+| POST /api/auth/refresh | 10 | 60 секунд |
+| POST /api/auth/logout | 5 | 60 секунд |
 
 Настройки: секция `AuthRateLimiting` в appsettings.json, для каждого endpoint —
 `PermitLimit` и `WindowSeconds`. Значения проверяются при регистрации сервисов;
@@ -149,16 +149,16 @@ JWT challenge и запрет доступа возвращают ApiResult с �
 Учитываются все запросы к endpoint, включая неуспешные.
 ## Refresh и logout
 
-- `POST /auth/login` сохраняет refresh и устанавливает cookie `refreshToken`.
-- `POST /auth/refresh` читает cookie, помечает её токен использованным и выдаёт новую пару.
+- `POST /api/auth/login` сохраняет refresh и устанавливает cookie `refreshToken`.
+- `POST /api/auth/refresh` читает cookie, помечает её токен использованным и выдаёт новую пару.
   Ответ — тот же `ApiResult<AuthResponse>`, что при входе. `sid` и абсолютный срок
   refresh-сессии сохраняются. Неизвестный, истёкший или отозванный токен даёт 401
   с очисткой cookie. Повтор использованного токена отзывает всё семейство до возврата 401.
-- `POST /auth/logout` доступен без JWT, отзывает семейство по cookie и удаляет её.
+- `POST /api/auth/logout` доступен без JWT, отзывает семейство по cookie и удаляет её.
   Возвращает `200` с `ApiResult<bool>(true)` даже при отсутствующей или неизвестной cookie.
   Можно передать ранее ротированный токен: будет отозвано всё его семейство.
 
-Cookie: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/auth`, без Domain.
+Cookie: `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/api/auth`, без Domain.
 Срок задаётся `Jwt:RefreshTokenLifetimeDays` с момента входа; ротация его не продлевает.
 Cookie устанавливается и удаляется с одинаковыми атрибутами. Локальная проверка — по HTTPS.
 

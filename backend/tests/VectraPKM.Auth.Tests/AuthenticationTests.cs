@@ -64,7 +64,7 @@ public sealed class AuthenticationTests
         Assert.True(cookie.HttpOnly);
         Assert.True(cookie.Secure);
         Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Strict, cookie.SameSite);
-        Assert.Equal("/auth", cookie.Path.ToString());
+        Assert.Equal("/api/auth", cookie.Path.ToString());
         var rawRefresh = cookie.Value.ToString();
         Assert.Equal(64, Base64UrlEncoder.DecodeBytes(rawRefresh).Length);
         var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();

@@ -12,7 +12,7 @@ namespace VectraPKM.Projects.Api.Controllers;
 /// <summary>API личных проектов текущего пользователя.</summary>
 [ApiController]
 [Authorize]
-[Route("projects")]
+[Route("api/projects")]
 public sealed class ProjectsController(ProjectService projectService) : ControllerBase
 {
     /// <summary>Создаёт личный проект текущего пользователя.</summary>

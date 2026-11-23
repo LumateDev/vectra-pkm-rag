@@ -30,7 +30,7 @@ axiosInstance.interceptors.request.use((config: SessionRequest) => {
   const path = config.url;
   if (!path?.startsWith('/') || path.startsWith('//')) return config;
 
-  if (path.startsWith('/auth/')) {
+  if (path.startsWith('/api/auth/')) {
     if (config.method === 'post') config.headers.set('X-Auth-Request', '1');
     return config;
   }

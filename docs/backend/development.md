@@ -14,7 +14,7 @@ dotnet run --project src/VectraPKM.Api --launch-profile Kestrel
 - Swagger UI: https://127.0.0.1:7000/swagger
 - OpenAPI: https://127.0.0.1:7000/swagger/v1/swagger.json
 
-Swagger включён только в Development. В нём доступен `POST /auth/register`.
+Swagger включён только в Development. В нём доступен `POST /api/auth/register`.
 Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
 Для регистрации требуется доступная PostgreSQL с применённой миграцией Auth
 и строка подключения `ConnectionStrings:Auth`. При старте миграции не применяются.

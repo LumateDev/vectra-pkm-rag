@@ -15,7 +15,7 @@ namespace VectraPKM.Auth.Api.Controllers;
 /// HTTP-сценарии регистрации и аутентификации.
 /// </summary>
 [ApiController]
-[Route("auth")]
+[Route("api/auth")]
 [ProducesResponseType<ApiResult<object>>(StatusCodes.Status429TooManyRequests)]
 public sealed class AuthController : ControllerBase
 {
@@ -144,7 +144,7 @@ public sealed class AuthController : ControllerBase
         HttpOnly = true,
         Secure = true,
         SameSite = SameSiteMode.Strict,
-        Path = "/auth"
+        Path = "/api/auth"
     };
 
     private void SetRefreshTokenCookie(IssuedRefreshToken refreshToken)
