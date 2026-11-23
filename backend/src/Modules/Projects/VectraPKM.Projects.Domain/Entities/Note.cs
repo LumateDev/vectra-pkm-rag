@@ -29,14 +29,31 @@ public sealed class Note
     public Note(Guid projectId, string title, string markdown, DateTimeOffset createdAt)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(projectId, Guid.Empty);
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
         ArgumentNullException.ThrowIfNull(markdown);
 
         Id = Guid.NewGuid();
         ProjectId = projectId;
-        Title = title.Trim();
+        Title = NormalizeTitle(title);
         Markdown = markdown;
         CreatedAt = createdAt.ToUniversalTime();
         UpdatedAt = CreatedAt;
+    }
+
+    /// <summary>Обновляет заголовок, текст и время изменения заметки.</summary>
+    /// <param name="title">Новый заголовок заметки.</param>
+    /// <param name="markdown">Новый текст заметки.</param>
+    /// <param name="updatedAt">Время изменения.</param>
+    public void Update(string title, string markdown, DateTimeOffset updatedAt)
+    {
+        ArgumentNullException.ThrowIfNull(markdown);
+        Title = NormalizeTitle(title);
+        Markdown = markdown;
+        UpdatedAt = updatedAt.ToUniversalTime();
+    }
+
+    private static string NormalizeTitle(string title)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        return title.Trim();
     }
 }

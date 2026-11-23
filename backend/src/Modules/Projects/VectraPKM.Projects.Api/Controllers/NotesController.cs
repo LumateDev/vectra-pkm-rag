@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using VectraPKM.Projects.Api.Contracts;
 using VectraPKM.Projects.Api.Extensions;
 using VectraPKM.Projects.Application;
+using VectraPKM.Projects.Domain.Entities;
 using VectraPKM.Shared.Api.Contracts;
 
 namespace VectraPKM.Projects.Api.Controllers;
@@ -35,8 +36,10 @@ public sealed class NotesController(NoteService noteService) : ControllerBase
         if (note is null)
             return NotFound(new ApiResult<object>(error: "Проект не найден."));
 
-        var response = new NoteResponse(note.Id, note.ProjectId, note.Title, note.Markdown, note.CreatedAt, note.UpdatedAt);
-        return StatusCode(StatusCodes.Status201Created, new ApiResult<NoteResponse>(response));
+        return CreatedAtRoute(
+            "getNote",
+            new { projectId = note.ProjectId, noteId = note.Id },
+            new ApiResult<NoteResponse>(ToResponse(note)));
     }
 
     /// <summary>Возвращает список заметок личного проекта.</summary>
@@ -61,4 +64,59 @@ public sealed class NotesController(NoteService noteService) : ControllerBase
             note.Id, note.Title, note.CreatedAt, note.UpdatedAt)).ToArray();
         return Ok(new ApiResult<IReadOnlyList<NoteListItemResponse>>(response));
     }
+
+    /// <summary>Возвращает заголовок и текст заметки личного проекта.</summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="noteId">Идентификатор заметки.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpGet("{noteId:guid}", Name = "getNote")]
+    [ProducesResponseType<ApiResult<NoteResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<NoteResponse>>> Get(
+        Guid projectId,
+        Guid noteId,
+        CancellationToken cancellationToken)
+    {
+        if (!User.TryGetOwnerId(out var ownerId))
+            return Challenge();
+
+        var note = await noteService.GetAsync(projectId, noteId, ownerId, cancellationToken);
+        return ToNoteResult(note);
+    }
+
+    /// <summary>Сохраняет заголовок и текст существующей заметки личного проекта.</summary>
+    /// <param name="projectId">Идентификатор проекта.</param>
+    /// <param name="noteId">Идентификатор заметки.</param>
+    /// <param name="request">Новый заголовок и текст заметки.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpPut("{noteId:guid}", Name = "updateNote")]
+    [ProducesResponseType<ApiResult<NoteResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<NoteResponse>>> Update(
+        Guid projectId,
+        Guid noteId,
+        [FromBody] UpdateNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!User.TryGetOwnerId(out var ownerId))
+            return Challenge();
+
+        var note = await noteService.UpdateAsync(
+            projectId, noteId, ownerId, request.Title, request.Markdown, cancellationToken);
+        return ToNoteResult(note);
+    }
+
+    private ActionResult<ApiResult<NoteResponse>> ToNoteResult(Note? note)
+    {
+        if (note is null)
+            return NotFound(new ApiResult<object>(error: "Заметка не найдена."));
+
+        return Ok(new ApiResult<NoteResponse>(ToResponse(note)));
+    }
+
+    private static NoteResponse ToResponse(Note note)
+        => new(note.Id, note.ProjectId, note.Title, note.Markdown, note.CreatedAt, note.UpdatedAt);
 }

@@ -34,4 +34,31 @@ public sealed class NoteService(IProjectStore projects, INoteStore notes)
 
         return await notes.ListAsync(project.Id, cancellationToken);
     }
+
+    /// <summary>Открывает заметку, если она находится в проекте указанного владельца.</summary>
+    public async Task<Note?> GetAsync(Guid projectId, Guid noteId, Guid ownerId, CancellationToken cancellationToken)
+    {
+        var project = await projects.FindByOwnerAsync(projectId, ownerId, cancellationToken);
+        if (project is null)
+            return null;
+
+        return await notes.FindAsync(project.Id, noteId, cancellationToken);
+    }
+
+    /// <summary>Сохраняет изменения заметки в проекте указанного владельца.</summary>
+    public async Task<Note?> UpdateAsync(
+        Guid projectId,
+        Guid noteId,
+        Guid ownerId,
+        string title,
+        string markdown,
+        CancellationToken cancellationToken)
+    {
+        var note = await GetAsync(projectId, noteId, ownerId, cancellationToken);
+        if (note is null)
+            return null;
+
+        note.Update(title, markdown, DateTimeOffset.UtcNow);
+        return await notes.SaveContentAsync(note, cancellationToken) ? note : null;
+    }
 }
