@@ -13,6 +13,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <ProjectReference Include="..\Modules\Auth\VectraPKM.Auth.Api\VectraPKM.Auth.Api.csproj" />
+    <ProjectReference Include="..\Modules\Projects\VectraPKM.Projects.Infrastructure\VectraPKM.Projects.Infrastructure.csproj" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>

@@ -4,6 +4,7 @@ using Serilog;
 using VectraPKM.Api.Logging;
 using VectraPKM.Auth.Api;
 using VectraPKM.Auth.Api.Contracts;
+using VectraPKM.Projects.Infrastructure;
 using VectraPKM.Shared.Api.Contracts;
 
 Log.Logger = LoggingExtensions.CreateBootstrapLogger("VectraPKM.Api");
@@ -13,6 +14,7 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.AddVectraLogging("VectraPKM.Api");
     builder.Services.AddAuthModule(builder.Configuration);
+    builder.Services.AddProjectsInfrastructure(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.Configure<ApiBehaviorOptions>(options =>
     {
