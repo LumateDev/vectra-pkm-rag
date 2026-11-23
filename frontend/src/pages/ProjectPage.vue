@@ -45,6 +45,8 @@
       </div>
       <p v-if="renameError" class="project-error" role="alert">{{ renameError }}</p>
     </q-form>
+
+    <project-notes v-if="project" :key="project.id" :project-id="project.id" />
   </section>
 </template>
 
@@ -55,6 +57,7 @@ import { ref, watch } from 'vue';
 import { getApiErrorMessage } from '../api/axios-instance';
 import { getProjects } from '../api/generated/endpoints/projects/projects';
 import type { ProjectResponse } from '../api/generated/models';
+import ProjectNotes from '../components/ProjectNotes.vue';
 
 const props = defineProps<{ id: string }>();
 const api = getProjects();

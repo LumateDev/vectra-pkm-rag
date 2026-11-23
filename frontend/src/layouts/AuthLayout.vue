@@ -4,21 +4,21 @@ import { useRoute } from 'vue-router';
 import ThemeToggle from '../components/ThemeToggle.vue';
 
 const route = useRoute();
-const isProjectsPage = computed(() => route.name === 'projects' || route.name === 'project');
+const isProjectWorkspace = computed(() => route.meta.projectWorkspace === true);
 const fitWorkspace = () => ({ height: '100%', minHeight: '0' });
 </script>
 
 <template>
   <q-layout
     view="hHh lpR fFf"
-    :class="{ 'workspace-layout': isProjectsPage }"
-    :style="isProjectsPage ? { minHeight: '0' } : undefined"
+    :class="{ 'workspace-layout': isProjectWorkspace }"
+    :style="isProjectWorkspace ? { minHeight: '0' } : undefined"
   >
-    <q-page-container :class="{ 'workspace-container': isProjectsPage }">
+    <q-page-container :class="{ 'workspace-container': isProjectWorkspace }">
       <q-page
         class="auth-page"
-        :class="{ 'workspace-page': isProjectsPage }"
-        :style-fn="isProjectsPage ? fitWorkspace : undefined"
+        :class="{ 'workspace-page': isProjectWorkspace }"
+        :style-fn="isProjectWorkspace ? fitWorkspace : undefined"
       >
         <header class="auth-header">
           <div class="brand">
@@ -29,7 +29,9 @@ const fitWorkspace = () => ({ height: '100%', minHeight: '0' });
           <ThemeToggle />
         </header>
         <div class="auth-main"><router-view /></div>
-        <footer v-if="!isProjectsPage" class="auth-footer">Ваше пространство для знаний.</footer>
+        <footer v-if="!isProjectWorkspace" class="auth-footer">
+          Ваше пространство для знаний.
+        </footer>
       </q-page>
     </q-page-container>
   </q-layout>

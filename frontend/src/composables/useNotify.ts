@@ -1,6 +1,10 @@
 import { Notify } from 'quasar';
 
 export function useNotify() {
+  function notifySuccess(message: string) {
+    Notify.create({ message, type: 'positive', position: 'top', timeout: 2200 });
+  }
+
   function notifyError(message: string) {
     Notify.create({
       message,
@@ -11,5 +15,5 @@ export function useNotify() {
     });
   }
 
-  return { notifyError };
+  return { notifyError, notifySuccess };
 }
