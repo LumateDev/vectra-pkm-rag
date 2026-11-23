@@ -20,4 +20,9 @@ internal sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
             .ThenBy(project => project.Id)
             .ToListAsync(cancellationToken);
     }
+
+    public Task<Project?> FindByOwnerAsync(Guid id, Guid ownerId, CancellationToken cancellationToken)
+        => db.Projects.AsNoTracking().SingleOrDefaultAsync(
+            project => project.Id == id && project.OwnerId == ownerId,
+            cancellationToken);
 }

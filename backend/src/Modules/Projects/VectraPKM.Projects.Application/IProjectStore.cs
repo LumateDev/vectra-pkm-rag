@@ -10,4 +10,7 @@ public interface IProjectStore
 
     /// <summary>Возвращает проекты указанного владельца.</summary>
     Task<IReadOnlyList<Project>> ListByOwnerAsync(Guid ownerId, CancellationToken cancellationToken);
+
+    /// <summary>Находит проект по идентификатору и владельцу.</summary>
+    Task<Project?> FindByOwnerAsync(Guid id, Guid ownerId, CancellationToken cancellationToken);
 }

@@ -16,4 +16,8 @@ public sealed class ProjectService(IProjectStore store)
     /// <summary>Возвращает проекты указанного владельца.</summary>
     public Task<IReadOnlyList<Project>> ListAsync(Guid ownerId, CancellationToken cancellationToken)
         => store.ListByOwnerAsync(ownerId, cancellationToken);
+
+    /// <summary>Возвращает проект указанного владельца, если он существует.</summary>
+    public Task<Project?> GetAsync(Guid id, Guid ownerId, CancellationToken cancellationToken)
+        => store.FindByOwnerAsync(id, ownerId, cancellationToken);
 }

@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import ThemeToggle from '../components/ThemeToggle.vue';
 
 const route = useRoute();
-const isProjectsPage = computed(() => route.name === 'projects');
+const isProjectsPage = computed(() => route.name === 'projects' || route.name === 'project');
 const fitWorkspace = () => ({ height: '100%', minHeight: '0' });
 </script>
 

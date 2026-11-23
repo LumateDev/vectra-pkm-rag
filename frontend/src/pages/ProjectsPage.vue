@@ -33,15 +33,19 @@
           <q-btn label="Повторить" flat no-caps :disable="isCreating" @click="loadProjects" />
         </div>
         <ul v-if="projects.length" class="project-grid">
-          <li v-for="project in projects" :key="project.id" class="project-card">
-            <div class="project-icon" aria-hidden="true">
-              <q-icon name="folder_open" size="1.375rem" />
-            </div>
-            <h2>{{ project.name }}</h2>
-            <p class="project-date">
-              Создан
-              <time :datetime="project.createdAt">{{ formatProjectDate(project.createdAt) }}</time>
-            </p>
+          <li v-for="project in projects" :key="project.id">
+            <router-link class="project-card" :to="{ name: 'project', params: { id: project.id } }">
+              <div class="project-icon" aria-hidden="true">
+                <q-icon name="folder_open" size="1.375rem" />
+              </div>
+              <h2>{{ project.name }}</h2>
+              <p class="project-date">
+                Создан
+                <time :datetime="project.createdAt">{{
+                  formatProjectDate(project.createdAt)
+                }}</time>
+              </p>
+            </router-link>
           </li>
         </ul>
         <p v-else-if="!listError" class="projects-empty">У вас пока нет проектов.</p>
@@ -185,6 +189,7 @@ async function onLogout() {
   display: grid;
   align-content: start;
   gap: 0.875rem;
+  height: 100%;
   min-width: 0;
   padding: 1.25rem;
   border: 1px solid theme.token('app-border');
@@ -195,7 +200,13 @@ async function onLogout() {
     theme.token('app-surface') 65%
   );
   box-shadow: theme.token('app-card-shadow');
+  color: theme.token('app-text');
   overflow-wrap: anywhere;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline-offset: -2px;
+  }
 }
 
 .project-icon {

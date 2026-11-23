@@ -24,6 +24,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/ProjectsPage.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: 'projects/:id',
+        name: 'project',
+        component: () => import('../pages/ProjectPage.vue'),
+        props: true,
+        meta: { requiresAuth: true },
+      },
       { path: ':catchAll(.*)*', component: () => import('../pages/ErrorNotFound.vue') },
     ],
   },

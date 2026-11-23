@@ -45,6 +45,27 @@ public sealed class ProjectsController(ProjectService projectService) : Controll
         return Ok(new ApiResult<IReadOnlyList<ProjectResponse>>(projects.Select(ToResponse).ToArray()));
     }
 
+    /// <summary>Открывает личный проект текущего пользователя по идентификатору.</summary>
+    /// <param name="id">Идентификатор проекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    [HttpGet("{id:guid}", Name = "getProject")]
+    [ProducesResponseType<ApiResult<ProjectResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ApiResult<object>>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResult<ProjectResponse>>> Get(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(out var ownerId))
+            return Challenge();
+
+        var project = await projectService.GetAsync(id, ownerId, cancellationToken);
+        if (project is null)
+            return NotFound(new ApiResult<object>(error: "Проект не найден."));
+
+        return Ok(new ApiResult<ProjectResponse>(ToResponse(project)));
+    }
+
     private bool TryGetOwnerId(out Guid ownerId)
         => Guid.TryParse(User.FindFirstValue("sub"), out ownerId) && ownerId != Guid.Empty;
 
