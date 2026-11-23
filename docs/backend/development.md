@@ -5,7 +5,7 @@
 ```powershell
 cd backend
 dotnet build VectraPKM.slnx
-dotnet run --project src/VectraPKM.Api --launch-profile Kestrel
+dotnet run --project src/VectraPKM.Api --launch-profile Kestrel -- --urls https://127.0.0.1:7000
 ```
 
 В Visual Studio запускай `VectraPKM.Api` с профилем `Kestrel` (прямой запуск, без IIS Express).
@@ -16,8 +16,9 @@ dotnet run --project src/VectraPKM.Api --launch-profile Kestrel
 
 Swagger включён только в Development. В нём доступен `POST /api/auth/register`.
 Для HTTPS нужен доверенный сертификат: `dotnet dev-certs https --trust`.
-Для регистрации требуется доступная PostgreSQL с применённой миграцией Auth
-и строка подключения `ConnectionStrings:Auth`. При старте миграции не применяются.
+Для работы API нужна доступная PostgreSQL. Укажи строку подключения
+`ConnectionStrings:Auth` в локальном `src/VectraPKM.Api/appsettings.Development.json`.
+Перед первым запуском примени миграции по инструкции ниже.
 Настройки JWT и тестовый ключ уже заданы в appsettings.json (см. ниже).
 
 ## Конфигурация
@@ -85,14 +86,13 @@ dotnet ef migrations add InitialAuth `
 
 ### Применение миграций
 
-Применить все ещё не применённые миграции к базе из строки подключения:
+Из каталога `backend` примени миграции Auth, затем Projects. Оба контекста
+используют базу из `ConnectionStrings:Auth`. Таблица проектов ссылается на
+`AspNetUsers`, таблица заметок — на проекты.
 
-```powershell
-dotnet ef database update `
-  --project src/Modules/Auth/VectraPKM.Auth.Infrastructure `
-  --startup-project src/VectraPKM.Api `
-  --context AuthDbContext `
-  -- --environment Development
+```bash
+dotnet ef database update --project src/Modules/Auth/VectraPKM.Auth.Infrastructure --startup-project src/VectraPKM.Api --context AuthDbContext --configuration Release -- --environment Development
+dotnet ef database update --project src/Modules/Projects/VectraPKM.Projects.Infrastructure --startup-project src/VectraPKM.Api --context ProjectsDbContext --configuration Release -- --environment Development
 ```
 
 ### Просмотр миграций
