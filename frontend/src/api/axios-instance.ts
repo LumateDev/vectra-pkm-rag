@@ -1,19 +1,7 @@
 import axios from 'axios';
-import type {
-  AxiosRequestConfig,
-  AxiosRequestTransformer,
-  InternalAxiosRequestConfig,
-} from 'axios';
-import { replaceDatesWithOffset } from './axios-time-formatter';
+import type { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import type { ObjectApiResult } from './generated/models';
 
-const defaultTransform = axios.defaults.transformRequest;
-const axiosTransformers = Array.isArray(defaultTransform)
-  ? defaultTransform
-  : defaultTransform
-    ? [defaultTransform]
-    : [];
-const transformDates: AxiosRequestTransformer = (data: unknown) => replaceDatesWithOffset(data);
 interface AxiosAuthHandlers {
   getAccessToken: () => string | null;
   getSessionVersion: () => number;
@@ -36,11 +24,9 @@ export const axiosInstance = axios.create({
   timeout: 30_000,
   withCredentials: true,
   paramsSerializer: { indexes: null },
-  transformRequest: [transformDates, ...axiosTransformers],
 });
 
 axiosInstance.interceptors.request.use((config: SessionRequest) => {
-  config.params = replaceDatesWithOffset(config.params);
   const path = config.url;
   if (!path?.startsWith('/') || path.startsWith('//')) return config;
 
