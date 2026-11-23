@@ -10,6 +10,9 @@ public sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> option
     /// <summary>Личные проекты пользователей.</summary>
     public DbSet<Project> Projects => Set<Project>();
 
+    /// <summary>Markdown-заметки в личных проектах.</summary>
+    public DbSet<Note> Notes => Set<Note>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -18,5 +21,6 @@ public sealed class ProjectsDbContext(DbContextOptions<ProjectsDbContext> option
         owner.HasKey(user => user.Id);
 
         builder.ApplyConfiguration(new ProjectConfiguration());
+        builder.ApplyConfiguration(new NoteConfiguration());
     }
 }
