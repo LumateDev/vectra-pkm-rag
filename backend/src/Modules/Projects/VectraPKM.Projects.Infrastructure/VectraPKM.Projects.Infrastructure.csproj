@@ -3,6 +3,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <ProjectReference Include="..\VectraPKM.Projects.Application\VectraPKM.Projects.Application.csproj" />
     <ProjectReference Include="..\VectraPKM.Projects.Domain\VectraPKM.Projects.Domain.csproj" />
   </ItemGroup>
 

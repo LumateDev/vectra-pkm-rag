@@ -17,6 +17,8 @@
     <Project Path="src/Modules/Auth/VectraPKM.Auth.Infrastructure/VectraPKM.Auth.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Projects/">
+    <Project Path="src/Modules/Projects/VectraPKM.Projects.Api/VectraPKM.Projects.Api.csproj" />
+    <Project Path="src/Modules/Projects/VectraPKM.Projects.Application/VectraPKM.Projects.Application.csproj" />
     <Project Path="src/Modules/Projects/VectraPKM.Projects.Domain/VectraPKM.Projects.Domain.csproj" />
     <Project Path="src/Modules/Projects/VectraPKM.Projects.Infrastructure/VectraPKM.Projects.Infrastructure.csproj" />
   </Folder>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using VectraPKM.Projects.Application;
 using VectraPKM.Projects.Infrastructure.Persistence;
 
 namespace VectraPKM.Projects.Infrastructure;
@@ -20,8 +21,10 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new InvalidOperationException("Не задана строка подключения ConnectionStrings:Auth.");
 
-        return services.AddDbContext<ProjectsDbContext>(options =>
+        services.AddDbContext<ProjectsDbContext>(options =>
             options.UseNpgsql(connectionString,
                 postgres => postgres.MigrationsHistoryTable("__ProjectsMigrationsHistory")));
+        services.AddScoped<IProjectStore, ProjectStore>();
+        return services;
     }
 }

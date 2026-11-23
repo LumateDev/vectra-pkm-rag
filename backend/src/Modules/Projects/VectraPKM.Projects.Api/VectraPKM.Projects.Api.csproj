@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\..\Shared\VectraPKM.Shared.Api\VectraPKM.Shared.Api.csproj" />
+    <ProjectReference Include="..\VectraPKM.Projects.Application\VectraPKM.Projects.Application.csproj" />
+    <ProjectReference Include="..\VectraPKM.Projects.Infrastructure\VectraPKM.Projects.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
