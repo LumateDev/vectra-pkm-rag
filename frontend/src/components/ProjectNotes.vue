@@ -36,37 +36,27 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onScopeDispose, ref } from 'vue';
-import { getApiErrorMessage } from '../api/axios-instance';
-import { getNotes } from '../api/generated/endpoints/notes/notes';
-import type { NoteListItemResponse } from '../api/generated/models';
+import { computed, watch } from 'vue';
+import { useWorkspace } from '../composables/useWorkspace';
 
 const props = defineProps<{ projectId: string }>();
-const api = getNotes();
+const workspace = useWorkspace();
 const updatedDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' });
-const request = new AbortController();
-const notes = ref<NoteListItemResponse[]>([]);
-const isLoading = ref(true);
-const error = ref('');
+const list = computed(() => workspace.notesByProject.get(props.projectId));
+const notes = computed(() => list.value?.items ?? []);
+const isLoading = computed(() => !list.value || list.value.status === 'loading');
+const error = computed(() => list.value?.error ?? '');
 
-onMounted(loadNotes);
-onScopeDispose(() => request.abort());
+watch(
+  () => props.projectId,
+  () => {
+    if (!list.value) void loadNotes();
+  },
+  { immediate: true },
+);
 
-async function loadNotes() {
-  isLoading.value = true;
-  error.value = '';
-  try {
-    const result = await api.listNotes(props.projectId, { signal: request.signal });
-    if (request.signal.aborted) return;
-    if (result.error || !result.data) {
-      throw new Error(result.error || 'Не удалось загрузить заметки.');
-    }
-    notes.value = result.data;
-  } catch (cause) {
-    if (!request.signal.aborted) error.value = getApiErrorMessage(cause);
-  } finally {
-    if (!request.signal.aborted) isLoading.value = false;
-  }
+function loadNotes() {
+  return workspace.loadNotes(props.projectId);
 }
 </script>
 

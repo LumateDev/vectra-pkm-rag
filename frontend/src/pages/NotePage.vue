@@ -51,11 +51,13 @@ import { useRouter } from 'vue-router';
 import { getApiErrorMessage } from '../api/axios-instance';
 import { getNotes } from '../api/generated/endpoints/notes/notes';
 import { useNotify } from '../composables/useNotify';
+import { useWorkspace } from '../composables/useWorkspace';
 
 const props = defineProps<{ id: string; noteId?: string }>();
 const router = useRouter();
 const api = getNotes();
 const { notifySuccess } = useNotify();
+const { saveNote: updateWorkspaceNote } = useWorkspace();
 const heading = computed(() => (props.noteId ? 'Редактирование заметки' : 'Новая заметка'));
 const title = ref('');
 const markdown = ref('');
@@ -123,6 +125,7 @@ async function saveNote() {
 
     title.value = result.data.title;
     markdown.value = result.data.markdown;
+    updateWorkspaceNote(id, result.data);
     notifySuccess('Заметка сохранена.');
     if (!noteId) await router.replace({ name: 'note', params: { id, noteId: result.data.id } });
   } catch (cause) {

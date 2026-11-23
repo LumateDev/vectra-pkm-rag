@@ -2,7 +2,6 @@
   <section class="projects" aria-labelledby="projects-title">
     <header class="projects-header">
       <h1 id="projects-title">Проекты</h1>
-      <q-btn label="Выйти" flat no-caps :loading="authStore.isLoggingOut" @click="onLogout" />
     </header>
 
     <q-form class="project-form" @submit="createProject">
@@ -28,12 +27,12 @@
     <div class="projects-scroll" role="region" aria-label="Список проектов" tabindex="0">
       <p v-if="isLoading" role="status">Загружаем проекты…</p>
       <template v-else>
-        <div v-if="listError" class="projects-list-error">
-          <p class="projects-error" role="alert">{{ listError }}</p>
+        <div v-if="projects.error" class="projects-list-error">
+          <p class="projects-error" role="alert">{{ projects.error }}</p>
           <q-btn label="Повторить" flat no-caps :disable="isCreating" @click="loadProjects" />
         </div>
-        <ul v-if="projects.length" class="project-grid">
-          <li v-for="project in projects" :key="project.id">
+        <ul v-if="projects.items.length" class="project-grid">
+          <li v-for="project in projects.items" :key="project.id">
             <router-link class="project-card" :to="{ name: 'project', params: { id: project.id } }">
               <div class="project-icon" aria-hidden="true">
                 <q-icon name="folder_open" size="1.375rem" />
@@ -48,7 +47,7 @@
             </router-link>
           </li>
         </ul>
-        <p v-else-if="!listError" class="projects-empty">У вас пока нет проектов.</p>
+        <p v-else-if="!projects.error" class="projects-empty">У вас пока нет проектов.</p>
       </template>
     </div>
   </section>
@@ -56,46 +55,24 @@
 
 <script setup lang="ts">
 import { useMeta } from 'quasar';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { getApiErrorMessage } from '../api/axios-instance';
 import { getProjects } from '../api/generated/endpoints/projects/projects';
-import type { ProjectResponse } from '../api/generated/models';
-import { useNotify } from '../composables/useNotify';
-import { useAuthStore } from '../stores/auth';
+import { useWorkspace } from '../composables/useWorkspace';
 
-const authStore = useAuthStore();
 const api = getProjects();
+const { projects, loadProjects, saveProject } = useWorkspace();
 const projectDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' });
-const { notifyError } = useNotify();
 useMeta({ title: 'Проекты · VectraPKM' });
 
-const projects = ref<ProjectResponse[]>([]);
 const projectName = ref('');
-const isLoading = ref(true);
+const isLoading = computed(() => projects.status === 'idle' || projects.status === 'loading');
 const isCreating = ref(false);
-const listError = ref('');
 const createError = ref('');
-
 onMounted(loadProjects);
 
 function formatProjectDate(value: string) {
   return projectDate.format(new Date(value));
-}
-
-async function loadProjects() {
-  isLoading.value = true;
-  listError.value = '';
-  try {
-    const response = await api.listProjects();
-    if (response.error || !response.data) {
-      throw new Error(response.error || 'Не удалось загрузить список проектов.');
-    }
-    projects.value = response.data;
-  } catch (error) {
-    listError.value = getApiErrorMessage(error);
-  } finally {
-    isLoading.value = false;
-  }
 }
 
 async function createProject() {
@@ -109,20 +86,12 @@ async function createProject() {
     if (response.error || !response.data) {
       throw new Error(response.error || 'Не удалось создать проект.');
     }
-    projects.value.unshift(response.data);
+    saveProject(response.data);
     projectName.value = '';
   } catch (error) {
     createError.value = getApiErrorMessage(error);
   } finally {
     isCreating.value = false;
-  }
-}
-
-async function onLogout() {
-  try {
-    await authStore.logout();
-  } catch (error) {
-    notifyError(getApiErrorMessage(error));
   }
 }
 </script>

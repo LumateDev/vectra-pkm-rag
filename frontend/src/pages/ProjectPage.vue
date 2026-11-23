@@ -58,9 +58,11 @@ import { getApiErrorMessage } from '../api/axios-instance';
 import { getProjects } from '../api/generated/endpoints/projects/projects';
 import type { ProjectResponse } from '../api/generated/models';
 import ProjectNotes from '../components/ProjectNotes.vue';
+import { useWorkspace } from '../composables/useWorkspace';
 
 const props = defineProps<{ id: string }>();
 const api = getProjects();
+const { saveProject } = useWorkspace();
 const project = ref<ProjectResponse>();
 const isLoading = ref(true);
 const error = ref('');
@@ -129,6 +131,7 @@ async function renameProject() {
     }
 
     project.value = response.data;
+    saveProject(response.data);
     isEditing.value = false;
   } catch (cause) {
     if (!signal.aborted) renameError.value = getApiErrorMessage(cause);
