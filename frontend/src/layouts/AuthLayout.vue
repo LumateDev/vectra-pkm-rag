@@ -1,11 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import ThemeToggle from '../components/ThemeToggle.vue';
+
+const route = useRoute();
+const isProjectsPage = computed(() => route.name === 'projects');
+const fitWorkspace = () => ({ height: '100%', minHeight: '0' });
 </script>
 
 <template>
-  <q-layout view="hHh lpR fFf" class="auth-layout">
-    <q-page-container>
-      <q-page class="auth-page">
+  <q-layout
+    view="hHh lpR fFf"
+    :class="{ 'workspace-layout': isProjectsPage }"
+    :style="isProjectsPage ? { minHeight: '0' } : undefined"
+  >
+    <q-page-container :class="{ 'workspace-container': isProjectsPage }">
+      <q-page
+        class="auth-page"
+        :class="{ 'workspace-page': isProjectsPage }"
+        :style-fn="isProjectsPage ? fitWorkspace : undefined"
+      >
         <header class="auth-header">
           <div class="brand">
             <span class="brand-symbol" aria-hidden="true">v.</span> Vectra<span class="brand-suffix"
@@ -14,8 +28,8 @@ import ThemeToggle from '../components/ThemeToggle.vue';
           </div>
           <ThemeToggle />
         </header>
-        <main class="auth-main"><router-view /></main>
-        <footer class="auth-footer">Ваше пространство для знаний.</footer>
+        <div class="auth-main"><router-view /></div>
+        <footer v-if="!isProjectsPage" class="auth-footer">Ваше пространство для знаний.</footer>
       </q-page>
     </q-page-container>
   </q-layout>
@@ -82,6 +96,27 @@ import ThemeToggle from '../components/ThemeToggle.vue';
   }
   .auth-main {
     padding: 32px 0;
+  }
+}
+
+.workspace-layout {
+  height: 100dvh;
+  overflow: clip;
+}
+
+.workspace-container {
+  height: 100%;
+}
+
+.workspace-page {
+  gap: clamp(0.75rem, 3dvh, 2.25rem);
+  padding-block: clamp(0.75rem, 2dvh, 1.5rem);
+
+  .auth-main {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    place-items: stretch center;
+    padding: 0;
   }
 }
 </style>

@@ -36,6 +36,16 @@ export default defineConfig(() => ({
         // Kestrel использует локальный сертификат разработки.
         secure: apiProxyTarget.hostname !== '127.0.0.1',
       },
+      '^/projects(?:[/?]|$)': {
+        target: apiProxyTarget.href,
+        changeOrigin: true,
+        secure: apiProxyTarget.hostname !== '127.0.0.1',
+        bypass(request) {
+          if (request.method === 'GET' && request.headers.accept?.includes('text/html')) {
+            return request.url;
+          }
+        },
+      },
     },
   },
   framework: {
