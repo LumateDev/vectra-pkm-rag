@@ -1,15 +1,37 @@
+@use 'sass:map';
 @use 'contract';
-@use 'light';
-@use 'dark';
+@use 'neutral-indigo';
+@use 'graphite-mint';
+@use 'steel-amber';
+@use 'pacific-ocean';
+
+$base-light: map.get(neutral-indigo.$palette, light);
+$base-dark: map.get(neutral-indigo.$palette, dark);
+
+$palettes: (
+  'graphite-mint': graphite-mint.$palette,
+  'steel-amber': steel-amber.$palette,
+  'pacific-ocean': pacific-ocean.$palette,
+);
 
 :root {
-  @include contract.emit(light.$tokens);
+  @include contract.emit($base-light);
   color-scheme: light;
 }
 
 body.body--dark {
-  @include contract.emit(dark.$tokens);
+  @include contract.emit($base-dark);
   color-scheme: dark;
+}
+
+@each $scheme, $palette in $palettes {
+  :root[data-theme-scheme='#{$scheme}'] {
+    @include contract.emit(map.merge($base-light, map.get($palette, light)));
+  }
+
+  :root[data-theme-scheme='#{$scheme}'] body.body--dark {
+    @include contract.emit(map.merge($base-dark, map.get($palette, dark)));
+  }
 }
 
 // Quasar components consume the same semantic palette as app components.

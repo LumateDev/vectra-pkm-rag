@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
 import { computed } from 'vue';
-import { themeStorageKey } from '../boot/theme';
+import { useAppStore } from '../stores/app';
 
-const $q = useQuasar();
-const label = computed(() => ($q.dark.isActive ? 'Включить светлую тему' : 'Включить тёмную тему'));
-
-function toggleTheme() {
-  $q.dark.toggle();
-  try {
-    localStorage.setItem(themeStorageKey, $q.dark.isActive ? 'dark' : 'light');
-  } catch {
-    // The switch still works when browser storage is unavailable.
-  }
-}
+const app = useAppStore();
+const label = computed(() => (app.isDark ? 'Включить светлую тему' : 'Включить тёмную тему'));
 </script>
 
 <template>
@@ -22,10 +12,10 @@ function toggleTheme() {
     flat
     round
     size="0.875rem"
-    :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+    :icon="app.isDark ? 'light_mode' : 'dark_mode'"
     :aria-label="label"
     :title="label"
-    @click="toggleTheme"
+    @click="app.toggleTheme"
   />
 </template>
 

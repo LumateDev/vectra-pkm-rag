@@ -1,8 +1,9 @@
 @use 'theme';
 @use 'theme/contract' as theme-contract;
+@use 'variables';
 
 :root {
-  font-size: 100%;
+  font-size: var(--app-font-size);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -11,7 +12,7 @@
 body.body--light,
 body.body--dark {
   font-family: inherit;
-  font-size: 0.875rem;
+  font-size: 1rem;
   background: theme-contract.token('app-background');
   color: theme-contract.token('app-text');
 }

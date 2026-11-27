@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using Serilog;
+using VectraPKM.Api.Controllers;
 using VectraPKM.Api.Logging;
 using VectraPKM.Auth.Api;
 using VectraPKM.Projects.Api;
@@ -37,6 +38,7 @@ try
         options.NonNullableReferenceTypesAsRequired();
         options.IncludeXmlComments(typeof(AuthModule).Assembly);
         options.IncludeXmlComments(typeof(ProjectsModule).Assembly);
+        options.IncludeXmlComments(typeof(SystemController).Assembly);
 
         options.SwaggerDoc("v1", new OpenApiInfo
         {

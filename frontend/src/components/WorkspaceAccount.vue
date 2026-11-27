@@ -2,14 +2,31 @@
 import { computed, ref } from 'vue';
 import { getApiErrorMessage } from '../api/axios-instance';
 import { useNotify } from '../composables/useNotify';
+import { useAppStore } from '../stores/app';
 import { useAuthStore } from '../stores/auth';
-import ThemeToggle from './ThemeToggle.vue';
 
 const auth = useAuthStore();
+const app = useAppStore();
 const { notifyError } = useNotify();
 const menuOpen = ref(false);
 const profileOpen = ref(false);
 const settingsOpen = ref(false);
+const themeModes = [
+  { label: 'Как в системе', value: 'system' },
+  { label: 'Светлая', value: 'light' },
+  { label: 'Тёмная', value: 'dark' },
+];
+const themeSchemes = [
+  { label: 'Индиго', value: 'neutral-indigo' },
+  { label: 'Графит и мята', value: 'graphite-mint' },
+  { label: 'Сталь и янтарь', value: 'steel-amber' },
+  { label: 'Тихий океан', value: 'pacific-ocean' },
+];
+const fontSizes = [
+  { label: 'Мелкий', value: 'small' },
+  { label: 'Стандартный', value: 'medium' },
+  { label: 'Крупный', value: 'large' },
+];
 const name = computed(() => auth.currentUser?.userName || 'Аккаунт');
 const initials = computed(() =>
   name.value
@@ -98,7 +115,11 @@ async function logout() {
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="settingsOpen" aria-labelledby="settings-heading">
+    <q-dialog
+      v-model="settingsOpen"
+      aria-labelledby="settings-heading"
+      @before-show="app.loadApiVersion"
+    >
       <q-card class="account-dialog">
         <q-card-section class="dialog-heading">
           <h2 id="settings-heading">Настройки</h2>
@@ -111,14 +132,45 @@ async function logout() {
             aria-label="Закрыть настройки"
           />
         </q-card-section>
-        <q-card-section class="theme-setting">
-          <div>
-            <div>Тема оформления</div>
-            <div class="theme-value" aria-live="polite">
-              {{ $q.dark.isActive ? 'Тёмная' : 'Светлая' }}
+        <q-card-section class="appearance-settings">
+          <q-select
+            :model-value="app.themeMode"
+            :options="themeModes"
+            label="Тема оформления"
+            outlined
+            emit-value
+            map-options
+            @update:model-value="app.setThemeMode"
+          />
+          <q-select
+            :model-value="app.themeScheme"
+            :options="themeSchemes"
+            label="Палитра"
+            outlined
+            emit-value
+            map-options
+            @update:model-value="app.setThemeScheme"
+          />
+          <q-select
+            v-model="app.appFontSize"
+            :options="fontSizes"
+            label="Размер текста"
+            outlined
+            emit-value
+            map-options
+          />
+        </q-card-section>
+        <q-card-section>
+          <dl class="versions" aria-label="Версии приложения">
+            <div>
+              <dt>Клиент</dt>
+              <dd>{{ app.clientVersion }}</dd>
             </div>
-          </div>
-          <ThemeToggle />
+            <div>
+              <dt>API</dt>
+              <dd>{{ app.apiVersion ?? '—' }}</dd>
+            </div>
+          </dl>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -206,8 +258,7 @@ async function logout() {
   border-radius: 0.875rem;
 }
 
-.dialog-heading,
-.theme-setting {
+.dialog-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -240,8 +291,26 @@ async function logout() {
   }
 }
 
-.theme-value {
+.appearance-settings {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.versions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
   color: theme.token('app-muted');
   font-size: 0.8125rem;
+
+  div {
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  dd {
+    margin: 0;
+  }
 }
 </style>

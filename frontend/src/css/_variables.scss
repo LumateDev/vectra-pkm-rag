@@ -1,0 +1,11 @@
+:root {
+  --app-font-size: 100%;
+}
+
+:root[data-app-font-size='small'] {
+  --app-font-size: 93.75%;
+}
+
+:root[data-app-font-size='large'] {
+  --app-font-size: 112.5%;
+}
